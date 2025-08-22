@@ -11,8 +11,8 @@ const EvaluationSummary = () => {
   }, [])
 
   const totalEvaluations = Object.keys(evaluations).length
-  const positiveEvaluations = Object.values(evaluations).filter(eval => eval.evaluation === 'positive').length
-  const negativeEvaluations = Object.values(evaluations).filter(eval => eval.evaluation === 'negative').length
+  const positiveEvaluations = Object.values(evaluations).filter(evaluation => evaluation.evaluation === 'positive').length
+  const negativeEvaluations = Object.values(evaluations).filter(evaluation => evaluation.evaluation === 'negative').length
   const positivePercentage = totalEvaluations > 0 ? ((positiveEvaluations / totalEvaluations) * 100).toFixed(1) : 0
 
   const formatDate = (dateString) => {
@@ -177,8 +177,8 @@ const EvaluationSummary = () => {
           <button
             onClick={() => {
               const evaluationsText = Object.entries(evaluations)
-                .map(([ticketId, eval]) => 
-                  `Chamado #${ticketId}: ${eval.evaluation === 'positive' ? 'Positiva' : 'Negativa'} - ${eval.comment || 'Sem comentário'} - ${formatDate(eval.date)}`
+                .map(([ticketId, evaluation]) => 
+                  `Chamado #${ticketId}: ${evaluation.evaluation === 'positive' ? 'Positiva' : 'Negativa'} - ${evaluation.comment || 'Sem comentário'} - ${formatDate(evaluation.date)}`
                 )
                 .join('\n')
               
