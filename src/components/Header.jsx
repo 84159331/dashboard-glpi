@@ -11,8 +11,8 @@ const Header = () => {
               <div className="flex items-center space-x-2">
                 <BarChart3 className="h-8 w-8 text-blue-400" />
                 <div className="text-left">
-                  <h2 className="text-lg font-bold text-white">LEONARDO KARPINSKI</h2>
-                  <p className="text-sm text-gray-300">APOIO POWER BI</p>
+                  <h2 className="text-lg font-bold text-white">JADNEY RANES</h2>
+                  <p className="text-sm text-gray-300">DASHBOARD CHAMADOS GPLI</p>
                 </div>
               </div>
             </div>
