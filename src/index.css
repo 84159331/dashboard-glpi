@@ -9,12 +9,28 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-}
-
-.dashboard-card {
-  @apply bg-white rounded-lg shadow-md p-6 border border-gray-200;
+  background-color: #111827;
+  color: #f9fafb;
 }
 
 .chart-container {
   @apply w-full h-64 md:h-80;
+}
+
+/* Scrollbar personalizada para tema escuro */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #374151;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #6b7280;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
 } 

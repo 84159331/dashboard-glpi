@@ -86,10 +86,10 @@ const CSVUploader = ({ onDataLoaded }) => {
   return (
     <div className="max-w-2xl mx-auto">
       <div className="text-center mb-8">
-        <h2 className="text-3xl font-bold text-gray-900 mb-4">
+        <h2 className="text-3xl font-bold text-white mb-4">
           Carregue seu arquivo GLPI
         </h2>
-        <p className="text-lg text-gray-600">
+        <p className="text-lg text-gray-400">
           Arraste e solte seu arquivo CSV do GLPI aqui ou clique para selecionar
         </p>
       </div>
@@ -97,8 +97,8 @@ const CSVUploader = ({ onDataLoaded }) => {
       <div
         className={`relative border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
           dragActive 
-            ? 'border-primary-500 bg-primary-50' 
-            : 'border-gray-300 hover:border-primary-400'
+            ? 'border-blue-500 bg-blue-900/20' 
+            : 'border-gray-600 hover:border-blue-400'
         }`}
         onDragEnter={handleDrag}
         onDragLeave={handleDrag}
@@ -115,24 +115,24 @@ const CSVUploader = ({ onDataLoaded }) => {
         <div className="space-y-4">
           {loading ? (
             <div className="flex flex-col items-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-              <p className="text-gray-600 mt-2">Processando arquivo GLPI...</p>
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+              <p className="text-gray-400 mt-2">Processando arquivo GLPI...</p>
             </div>
           ) : success ? (
             <div className="flex flex-col items-center">
               <CheckCircle className="h-12 w-12 text-green-500" />
-              <p className="text-green-600 font-medium">Arquivo GLPI carregado com sucesso!</p>
+              <p className="text-green-400 font-medium">Arquivo GLPI carregado com sucesso!</p>
             </div>
           ) : (
             <>
               <Headphones className="h-12 w-12 text-gray-400 mx-auto" />
               <div>
-                <p className="text-lg font-medium text-gray-900">
+                <p className="text-lg font-medium text-white">
                   Arraste seu arquivo GLPI aqui
                 </p>
-                <p className="text-gray-500">ou clique para selecionar</p>
+                <p className="text-gray-400">ou clique para selecionar</p>
               </div>
-              <div className="flex items-center justify-center text-sm text-gray-500">
+              <div className="flex items-center justify-center text-sm text-gray-400">
                 <FileText className="h-4 w-4 mr-1" />
                 Apenas arquivos .csv do GLPI são aceitos
               </div>
@@ -142,20 +142,20 @@ const CSVUploader = ({ onDataLoaded }) => {
       </div>
 
       {error && (
-        <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+        <div className="mt-4 p-4 bg-red-900/20 border border-red-700 rounded-lg">
           <div className="flex items-center">
-            <AlertCircle className="h-5 w-5 text-red-500 mr-2" />
-            <p className="text-red-700">{error}</p>
+            <AlertCircle className="h-5 w-5 text-red-400 mr-2" />
+            <p className="text-red-300">{error}</p>
           </div>
         </div>
       )}
 
       <div className="mt-8 text-center">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">
+        <h3 className="text-lg font-semibold text-white mb-4">
           Como exportar do GLPI
         </h3>
-        <div className="bg-gray-100 p-4 rounded-lg text-sm text-left max-w-md mx-auto">
-          <div className="space-y-2">
+        <div className="bg-gray-800 p-4 rounded-lg text-sm text-left max-w-md mx-auto border border-gray-700">
+          <div className="space-y-2 text-gray-300">
             <p><strong>1.</strong> Acesse o GLPI</p>
             <p><strong>2.</strong> Vá em "Tickets" → "Lista de tickets"</p>
             <p><strong>3.</strong> Aplique os filtros desejados</p>
@@ -166,11 +166,11 @@ const CSVUploader = ({ onDataLoaded }) => {
       </div>
 
       <div className="mt-6 text-center">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">
+        <h3 className="text-lg font-semibold text-white mb-4">
           Campos esperados do GLPI
         </h3>
-        <div className="bg-blue-50 p-4 rounded-lg text-sm text-left max-w-md mx-auto">
-          <div className="space-y-1">
+        <div className="bg-blue-900/20 p-4 rounded-lg text-sm text-left max-w-md mx-auto border border-blue-700">
+          <div className="space-y-1 text-gray-300">
             <p>• ID do ticket</p>
             <p>• Título</p>
             <p>• Status</p>

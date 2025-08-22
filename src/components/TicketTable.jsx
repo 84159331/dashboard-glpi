@@ -94,38 +94,38 @@ const TicketTable = ({ data }) => {
   const getStatusColor = (status) => {
     switch (status) {
       case 'Solucionado':
-        return 'bg-green-100 text-green-800'
+        return 'bg-green-900/20 text-green-400'
       case 'Fechado':
-        return 'bg-gray-100 text-gray-800'
+        return 'bg-gray-700 text-gray-300'
       case 'Em andamento':
-        return 'bg-blue-100 text-blue-800'
+        return 'bg-blue-900/20 text-blue-400'
       default:
-        return 'bg-yellow-100 text-yellow-800'
+        return 'bg-yellow-900/20 text-yellow-400'
     }
   }
 
   const getPriorityColor = (priority) => {
     switch (priority) {
       case 'Alta':
-        return 'bg-red-100 text-red-800'
+        return 'bg-red-900/20 text-red-400'
       case 'Média':
-        return 'bg-yellow-100 text-yellow-800'
+        return 'bg-yellow-900/20 text-yellow-400'
       case 'Baixa':
-        return 'bg-green-100 text-green-800'
+        return 'bg-green-900/20 text-green-400'
       default:
-        return 'bg-gray-100 text-gray-800'
+        return 'bg-gray-700 text-gray-300'
     }
   }
 
   const getSLAStatus = (ticket) => {
     const exceeded = ticket['Tempo para resolver excedido'] === 'Sim'
     return exceeded ? (
-      <span className="inline-flex items-center gap-1 px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs">
+      <span className="inline-flex items-center gap-1 px-2 py-1 bg-red-900/20 text-red-400 rounded-full text-xs">
         <AlertTriangle className="h-3 w-3" />
         SLA Excedido
       </span>
     ) : (
-      <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">
+      <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-900/20 text-green-400 rounded-full text-xs">
         <Clock className="h-3 w-3" />
         No Prazo
       </span>
@@ -144,7 +144,7 @@ const TicketTable = ({ data }) => {
               placeholder="Buscar nos chamados..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              className="pl-10 pr-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
           
@@ -152,7 +152,7 @@ const TicketTable = ({ data }) => {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              className="px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="all">Todos os Status</option>
               <option value="Solucionado">Solucionado</option>
@@ -163,7 +163,7 @@ const TicketTable = ({ data }) => {
             <select
               value={priorityFilter}
               onChange={(e) => setPriorityFilter(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              className="px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="all">Todas as Prioridades</option>
               <option value="Alta">Alta</option>
@@ -173,73 +173,73 @@ const TicketTable = ({ data }) => {
           </div>
         </div>
         
-        <div className="text-sm text-gray-600">
+        <div className="text-sm text-gray-400">
           Mostrando {startIndex + 1}-{Math.min(endIndex, sortedData.length)} de {sortedData.length} chamados
         </div>
       </div>
 
       {/* Tabela */}
       <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
+        <table className="min-w-full divide-y divide-gray-700">
+          <thead className="bg-gray-800">
             <tr>
               <th
                 onClick={() => handleSort('ID')}
-                className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-700"
               >
                 ID
                 {sortColumn === 'ID' && (
-                  <span className="text-primary-600 ml-1">
+                  <span className="text-blue-400 ml-1">
                     {sortDirection === 'asc' ? '↑' : '↓'}
                   </span>
                 )}
               </th>
               <th
                 onClick={() => handleSort('Título')}
-                className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-700"
               >
                 Título
                 {sortColumn === 'Título' && (
-                  <span className="text-primary-600 ml-1">
+                  <span className="text-blue-400 ml-1">
                     {sortDirection === 'asc' ? '↑' : '↓'}
                   </span>
                 )}
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
                 Status
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
                 Prioridade
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
                 Requerente
               </th>
               <th
                 onClick={() => handleSort('Data de abertura')}
-                className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-700"
               >
                 Data Abertura
                 {sortColumn === 'Data de abertura' && (
-                  <span className="text-primary-600 ml-1">
+                  <span className="text-blue-400 ml-1">
                     {sortDirection === 'asc' ? '↑' : '↓'}
                   </span>
                 )}
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
                 SLA
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
                 Ações
               </th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody className="bg-gray-900 divide-y divide-gray-700">
             {currentData.map((ticket, index) => (
-              <tr key={index} className="hover:bg-gray-50">
-                <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+              <tr key={index} className="hover:bg-gray-800">
+                <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-white">
                   {ticket.ID}
                 </td>
-                <td className="px-4 py-4 text-sm text-gray-900 max-w-xs truncate">
+                <td className="px-4 py-4 text-sm text-gray-300 max-w-xs truncate">
                   {ticket.Título}
                 </td>
                 <td className="px-4 py-4 whitespace-nowrap">
@@ -252,10 +252,10 @@ const TicketTable = ({ data }) => {
                     {ticket.Prioridade}
                   </span>
                 </td>
-                <td className="px-4 py-4 text-sm text-gray-900 max-w-xs truncate">
+                <td className="px-4 py-4 text-sm text-gray-300 max-w-xs truncate">
                   {ticket['Requerente - Requerente']}
                 </td>
-                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-300">
                   {ticket['Data de abertura']}
                 </td>
                 <td className="px-4 py-4 whitespace-nowrap">
@@ -264,7 +264,7 @@ const TicketTable = ({ data }) => {
                 <td className="px-4 py-4 whitespace-nowrap">
                   <button
                     onClick={() => handleViewDetails(ticket)}
-                    className="flex items-center space-x-1 px-3 py-1 bg-primary-100 text-primary-700 rounded-lg hover:bg-primary-200 transition-colors text-sm"
+                    className="flex items-center space-x-1 px-3 py-1 bg-blue-900/20 text-blue-400 rounded-lg hover:bg-blue-800/30 transition-colors text-sm"
                   >
                     <Eye className="h-3 w-3" />
                     <span>Ver</span>
@@ -279,7 +279,7 @@ const TicketTable = ({ data }) => {
       {/* Paginação */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between">
-          <div className="text-sm text-gray-600">
+          <div className="text-sm text-gray-400">
             Página {currentPage} de {totalPages}
           </div>
           
@@ -287,7 +287,7 @@ const TicketTable = ({ data }) => {
             <button
               onClick={() => handlePageChange(currentPage - 1)}
               disabled={currentPage === 1}
-              className="p-2 rounded-lg border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+              className="p-2 rounded-lg border border-gray-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-700 text-gray-300"
             >
               <ChevronLeft className="h-4 w-4" />
             </button>
@@ -300,8 +300,8 @@ const TicketTable = ({ data }) => {
                   onClick={() => handlePageChange(page)}
                   className={`px-3 py-2 rounded-lg border text-sm ${
                     currentPage === page
-                      ? 'bg-primary-600 text-white border-primary-600'
-                      : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                      ? 'bg-blue-600 text-white border-blue-600'
+                      : 'border-gray-600 text-gray-300 hover:bg-gray-700'
                   }`}
                 >
                   {page}
@@ -312,7 +312,7 @@ const TicketTable = ({ data }) => {
             <button
               onClick={() => handlePageChange(currentPage + 1)}
               disabled={currentPage === totalPages}
-              className="p-2 rounded-lg border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+              className="p-2 rounded-lg border border-gray-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-700 text-gray-300"
             >
               <ChevronRight className="h-4 w-4" />
             </button>

@@ -49,8 +49,8 @@ const Dashboard = ({ data, columns, onReset }) => {
       {/* Header do Dashboard */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Dashboard de Chamados TI</h2>
-          <p className="text-gray-600">
+          <h2 className="text-2xl font-bold text-white">Dashboard de Chamados TI</h2>
+          <p className="text-gray-400">
             {data.length} chamados carregados • {columns.length} campos
           </p>
         </div>
@@ -73,10 +73,10 @@ const Dashboard = ({ data, columns, onReset }) => {
       </div>
 
       {/* Controles do Dashboard */}
-      <div className="dashboard-card">
+      <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
         <div className="flex flex-col lg:flex-row gap-6">
           <div className="flex-1">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+            <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
               <Filter className="h-5 w-5" />
               Modo de Visualização
             </h3>
@@ -87,8 +87,8 @@ const Dashboard = ({ data, columns, onReset }) => {
                   onClick={() => setViewMode('stats')}
                   className={`flex items-center gap-2 px-4 py-3 rounded-lg border transition-colors ${
                     viewMode === 'stats'
-                      ? 'bg-primary-600 text-white border-primary-600'
-                      : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+                      ? 'bg-blue-600 text-white border-blue-600'
+                      : 'bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600'
                   }`}
                 >
                   <BarChart3 className="h-4 w-4" />
@@ -99,8 +99,8 @@ const Dashboard = ({ data, columns, onReset }) => {
                   onClick={() => setViewMode('charts')}
                   className={`flex items-center gap-2 px-4 py-3 rounded-lg border transition-colors ${
                     viewMode === 'charts'
-                      ? 'bg-primary-600 text-white border-primary-600'
-                      : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+                      ? 'bg-blue-600 text-white border-blue-600'
+                      : 'bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600'
                   }`}
                 >
                   <PieChart className="h-4 w-4" />
@@ -111,8 +111,8 @@ const Dashboard = ({ data, columns, onReset }) => {
                   onClick={() => setViewMode('table')}
                   className={`flex items-center gap-2 px-4 py-3 rounded-lg border transition-colors ${
                     viewMode === 'table'
-                      ? 'bg-primary-600 text-white border-primary-600'
-                      : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+                      ? 'bg-blue-600 text-white border-blue-600'
+                      : 'bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600'
                   }`}
                 >
                   <Table className="h-4 w-4" />
@@ -123,8 +123,8 @@ const Dashboard = ({ data, columns, onReset }) => {
                   onClick={() => setViewMode('category')}
                   className={`flex items-center gap-2 px-4 py-3 rounded-lg border transition-colors ${
                     viewMode === 'category'
-                      ? 'bg-primary-600 text-white border-primary-600'
-                      : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+                      ? 'bg-blue-600 text-white border-blue-600'
+                      : 'bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600'
                   }`}
                 >
                   <FolderOpen className="h-4 w-4" />
@@ -135,8 +135,8 @@ const Dashboard = ({ data, columns, onReset }) => {
                   onClick={() => setViewMode('evaluations')}
                   className={`flex items-center gap-2 px-4 py-3 rounded-lg border transition-colors ${
                     viewMode === 'evaluations'
-                      ? 'bg-primary-600 text-white border-primary-600'
-                      : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+                      ? 'bg-blue-600 text-white border-blue-600'
+                      : 'bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600'
                   }`}
                 >
                   <Star className="h-4 w-4" />
@@ -146,13 +146,13 @@ const Dashboard = ({ data, columns, onReset }) => {
 
               {viewMode === 'charts' && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
                     Tipo de Análise
                   </label>
                   <select
                     value={chartType}
                     onChange={(e) => setChartType(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   >
                     <option value="status">Distribuição por Status</option>
                     <option value="priority">Chamados por Prioridade</option>
@@ -174,30 +174,30 @@ const Dashboard = ({ data, columns, onReset }) => {
           </div>
 
           <div className="flex-1">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+            <h3 className="text-lg font-semibold text-white mb-4">
               Funcionalidades Disponíveis
             </h3>
             
             <div className="space-y-3">
               <div className="flex items-center space-x-3">
                 <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <span className="text-sm text-gray-700">Visualização detalhada de chamados</span>
+                <span className="text-sm text-gray-300">Visualização detalhada de chamados</span>
               </div>
               <div className="flex items-center space-x-3">
                 <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                <span className="text-sm text-gray-700">Análise por categoria</span>
+                <span className="text-sm text-gray-300">Análise por categoria</span>
               </div>
               <div className="flex items-center space-x-3">
                 <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                <span className="text-sm text-gray-700">Avaliação de soluções</span>
+                <span className="text-sm text-gray-300">Avaliação de soluções</span>
               </div>
               <div className="flex items-center space-x-3">
                 <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                <span className="text-sm text-gray-700">Métricas de SLA</span>
+                <span className="text-sm text-gray-300">Métricas de SLA</span>
               </div>
               <div className="flex items-center space-x-3">
                 <div className="w-2 h-2 bg-pink-500 rounded-full"></div>
-                <span className="text-sm text-gray-700">Histórico de avaliações</span>
+                <span className="text-sm text-gray-300">Histórico de avaliações</span>
               </div>
             </div>
           </div>
@@ -205,19 +205,19 @@ const Dashboard = ({ data, columns, onReset }) => {
       </div>
 
       {/* Conteúdo Principal */}
-      <div className="dashboard-card">
+      <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
         {renderContent()}
       </div>
 
       {/* Insights */}
-      <div className="dashboard-card">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">
+      <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
+        <h3 className="text-lg font-semibold text-white mb-4">
           Insights e Recomendações
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-3">
-            <h4 className="font-medium text-gray-900">Métricas de Performance</h4>
-            <ul className="text-sm text-gray-600 space-y-1">
+            <h4 className="font-medium text-white">Métricas de Performance</h4>
+            <ul className="text-sm text-gray-400 space-y-1">
               <li>• Tempo médio de resolução dos chamados</li>
               <li>• Taxa de resolução no primeiro contato</li>
               <li>• Compliance com SLAs estabelecidos</li>
@@ -225,8 +225,8 @@ const Dashboard = ({ data, columns, onReset }) => {
             </ul>
           </div>
           <div className="space-y-3">
-            <h4 className="font-medium text-gray-900">Ações Recomendadas</h4>
-            <ul className="text-sm text-gray-600 space-y-1">
+            <h4 className="font-medium text-white">Ações Recomendadas</h4>
+            <ul className="text-sm text-gray-400 space-y-1">
               <li>• Identificar categorias com maior volume</li>
               <li>• Analisar chamados que excedem SLA</li>
               <li>• Otimizar processos para redução de tempo</li>
