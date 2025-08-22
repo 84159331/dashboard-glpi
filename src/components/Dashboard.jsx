@@ -158,4 +158,65 @@ const Dashboard = ({ data, columns, onReset }) => {
           </div>
 
           <div className="flex-1">
-            <h3 className="text-lg font-semibold
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              Funcionalidades Disponíveis
+            </h3>
+            
+            <div className="space-y-3">
+              <div className="flex items-center space-x-3">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <span className="text-sm text-gray-700">Visualização detalhada de chamados</span>
+              </div>
+              <div className="flex items-center space-x-3">
+                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                <span className="text-sm text-gray-700">Análise por categoria</span>
+              </div>
+              <div className="flex items-center space-x-3">
+                <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                <span className="text-sm text-gray-700">Avaliação de soluções</span>
+              </div>
+              <div className="flex items-center space-x-3">
+                <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                <span className="text-sm text-gray-700">Métricas de SLA</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Conteúdo Principal */}
+      <div className="dashboard-card">
+        {renderContent()}
+      </div>
+
+      {/* Insights */}
+      <div className="dashboard-card">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">
+          Insights e Recomendações
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-3">
+            <h4 className="font-medium text-gray-900">Métricas de Performance</h4>
+            <ul className="text-sm text-gray-600 space-y-1">
+              <li>• Tempo médio de resolução dos chamados</li>
+              <li>• Taxa de resolução no primeiro contato</li>
+              <li>• Compliance com SLAs estabelecidos</li>
+              <li>• Distribuição de carga por técnico</li>
+            </ul>
+          </div>
+          <div className="space-y-3">
+            <h4 className="font-medium text-gray-900">Ações Recomendadas</h4>
+            <ul className="text-sm text-gray-600 space-y-1">
+              <li>• Identificar categorias com maior volume</li>
+              <li>• Analisar chamados que excedem SLA</li>
+              <li>• Otimizar processos para redução de tempo</li>
+              <li>• Treinamento em categorias problemáticas</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export default Dashboard 

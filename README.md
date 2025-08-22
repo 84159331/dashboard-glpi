@@ -1,140 +1,198 @@
-# Dashboard CSV
+# Dashboard de Chamados TI - GLPI
 
-Um dashboard interativo e moderno para visualização de dados CSV, construído com React, Recharts e Tailwind CSS.
+Um dashboard interativo e especializado para análise de tickets do GLPI, desenvolvido para analistas de TI que precisam organizar e avaliar seus chamados de suporte.
 
-## 🚀 Funcionalidades
+## 🚀 Funcionalidades Principais
 
-- **Upload de CSV**: Arraste e solte ou selecione arquivos CSV
-- **Visualizações Interativas**: Gráficos de barras, linha, pizza e dispersão
-- **Tabela de Dados**: Visualização em formato de tabela com busca e ordenação
-- **Estatísticas**: Cards com métricas resumidas dos dados
-- **Seleção de Colunas**: Escolha quais colunas visualizar
-- **Exportação**: Exporte os dados processados em CSV
-- **Interface Responsiva**: Funciona em desktop e mobile
+### 📊 **Visualizações Múltiplas**
+- **Estatísticas**: KPIs principais em cards visuais
+- **Gráficos**: Visualizações interativas (status, prioridade, categorias, timeline, SLA)
+- **Tabela**: Lista detalhada com busca e filtros avançados
+- **Análise por Categoria**: Visualização específica por categoria com avaliação
 
-## 🛠️ Tecnologias
+### 🔍 **Análise Detalhada de Chamados**
+- **Visualização Completa**: Modal detalhado com todas as informações do ticket
+- **Métricas de Tempo**: Tempo de espera, atribuição e solução
+- **Informações de SLA**: Compliance e excedidos
+- **Soluções Implementadas**: Visualização das soluções aplicadas
 
-- **React 18** - Framework principal
-- **Vite** - Build tool e dev server
-- **Recharts** - Biblioteca de gráficos
-- **PapaParse** - Parser de CSV
-- **Tailwind CSS** - Framework de estilização
-- **Lucide React** - Ícones
+### ⭐ **Sistema de Avaliação**
+- **Avaliação Positiva/Negativa**: Botões para avaliar atendimentos
+- **Comentários Opcionais**: Campo para feedback detalhado
+- **Armazenamento Local**: Avaliações salvas no navegador
+- **Histórico de Avaliações**: Rastreamento das avaliações realizadas
 
-## 📦 Instalação
+### 📈 **Métricas Especializadas**
+- Tempo médio de resolução
+- Taxa de resolução por categoria
+- Compliance com SLAs
+- Distribuição de prioridades
+- Evolução temporal dos chamados
 
-1. Clone o repositório:
+## 🛠️ Tecnologias Utilizadas
+
+- **React 18**: Framework principal
+- **Vite**: Build tool e dev server
+- **Recharts**: Biblioteca de gráficos
+- **PapaParse**: Parser de CSV
+- **Tailwind CSS**: Framework de estilização
+- **Lucide React**: Ícones modernos
+
+## 📋 Pré-requisitos
+
+- Node.js 16+ 
+- npm ou yarn
+
+## 🚀 Instalação
+
+1. **Clone o repositório**
 ```bash
 git clone <url-do-repositorio>
 cd dashboard
 ```
 
-2. Instale as dependências:
+2. **Instale as dependências**
 ```bash
 npm install
 ```
 
-3. Execute o projeto:
+3. **Inicie o servidor de desenvolvimento**
 ```bash
 npm run dev
 ```
 
-4. Abra [http://localhost:3000](http://localhost:3000) no navegador
-
-## 📊 Como Usar
-
-### 1. Upload do Arquivo CSV
-- Arraste e solte um arquivo CSV na área indicada
-- Ou clique para selecionar um arquivo
-- O sistema detectará automaticamente os tipos de dados
-
-### 2. Visualização dos Dados
-- **Cards de Estatísticas**: Veja métricas resumidas no topo
-- **Gráficos**: Escolha entre diferentes tipos de visualização
-- **Tabela**: Visualize os dados em formato tabular
-
-### 3. Configurações
-- **Tipo de Gráfico**: Barras, linha, pizza ou dispersão
-- **Seleção de Colunas**: Escolha quais colunas incluir
-- **Busca e Ordenação**: Na visualização em tabela
-
-### 4. Exportação
-- Clique em "Exportar CSV" para baixar os dados processados
-
-## 📁 Estrutura do Projeto
-
+4. **Acesse o dashboard**
 ```
-src/
-├── components/
-│   ├── CSVUploader.jsx      # Upload e processamento de CSV
-│   ├── Dashboard.jsx        # Componente principal do dashboard
-│   ├── ChartContainer.jsx   # Renderização de gráficos
-│   ├── DataTable.jsx        # Tabela de dados
-│   ├── StatsCards.jsx       # Cards de estatísticas
-│   ├── ColumnSelector.jsx   # Seletor de colunas
-│   └── Header.jsx           # Cabeçalho da aplicação
-├── App.jsx                  # Componente raiz
-├── main.jsx                 # Ponto de entrada
-└── index.css               # Estilos globais
+http://localhost:3000
 ```
 
-## 📋 Formato CSV Suportado
+## 📁 Como Usar
 
-O sistema funciona melhor com arquivos CSV que tenham:
-- **Cabeçalho**: Primeira linha com nomes das colunas
-- **Dados Consistentes**: Valores do mesmo tipo em cada coluna
-- **Valores Numéricos**: Para gráficos quantitativos
+### 1. **Exportar do GLPI**
+- Acesse o GLPI
+- Vá em "Tickets" → "Lista de tickets"
+- Aplique os filtros desejados
+- Clique em "Exportar" → "CSV"
 
-### Exemplo de CSV:
-```csv
-Nome,Idade,Cidade,Salário
-João,25,São Paulo,5000
-Maria,30,Rio de Janeiro,6000
-Pedro,28,Belo Horizonte,4500
+### 2. **Carregar no Dashboard**
+- Arraste o arquivo CSV para a área de upload
+- Ou clique para selecionar o arquivo
+- O sistema validará automaticamente se é um arquivo GLPI
+
+### 3. **Navegar pelas Visualizações**
+- **Estatísticas**: Visão geral dos KPIs
+- **Gráficos**: Escolha entre diferentes tipos de análise
+- **Tabela**: Lista completa com filtros
+- **Por Categoria**: Análise específica por categoria
+
+### 4. **Analisar Chamados**
+- Clique em "Ver" na tabela ou "Analisar" na análise por categoria
+- Visualize todos os detalhes do chamado
+- Avalie a solução (positiva ou negativamente)
+- Adicione comentários opcionais
+
+## 📊 Campos Esperados do GLPI
+
+O dashboard espera os seguintes campos do GLPI:
+- ID do ticket
+- Título
+- Status
+- Prioridade
+- Categoria
+- Requerente
+- Técnico responsável
+- Data de abertura
+- Tempo de resolução
+- Solução implementada
+- Informações de SLA
+
+## 🎯 Funcionalidades de Avaliação
+
+### **Como Avaliar**
+1. Acesse os detalhes de um chamado
+2. Clique em "Avaliar Positivamente" ou "Avaliar Negativamente"
+3. Adicione um comentário (opcional)
+4. Clique em "Enviar Avaliação"
+
+### **Armazenamento**
+- As avaliações são salvas no localStorage do navegador
+- Cada avaliação inclui: rating, comentário e data
+- As avaliações persistem entre sessões
+
+## 📈 Métricas Calculadas
+
+### **Tempo de Resolução**
+- Parse automático de strings "X horas Y minutos"
+- Conversão para minutos para cálculos
+- Média por categoria e geral
+
+### **SLA Compliance**
+- Identificação de tickets que excedem SLA
+- Percentual de compliance
+- Análise por categoria
+
+### **Taxa de Resolução**
+- Chamados resolvidos vs. total
+- Por categoria e geral
+- Tendências temporais
+
+## 🔧 Personalização
+
+### **Cores e Estilos**
+- Tema personalizável via Tailwind CSS
+- Cores específicas para status e prioridades
+- Design responsivo para diferentes dispositivos
+
+### **Configurações**
+- Número de itens por página na tabela
+- Tipos de gráficos disponíveis
+- Filtros padrão
+
+## 📱 Responsividade
+
+O dashboard é totalmente responsivo e funciona em:
+- Desktop (recomendado para análise completa)
+- Tablet (visualização otimizada)
+- Mobile (navegação básica)
+
+## 🔒 Segurança
+
+- Processamento local dos dados
+- Nenhum envio de dados para servidores externos
+- Armazenamento local das avaliações
+- Validação de arquivos CSV
+
+## 🚀 Deploy
+
+### **Build para Produção**
+```bash
+npm run build
 ```
 
-## 🎨 Tipos de Gráficos
+### **Servir Build**
+```bash
+npm run preview
+```
 
-### Gráfico de Barras
-- Ideal para comparar categorias
-- Funciona bem com dados categóricos e numéricos
+## 🤝 Contribuição
 
-### Gráfico de Linha
-- Perfeito para mostrar tendências
-- Melhor com dados sequenciais
-
-### Gráfico de Pizza
-- Mostra proporções e distribuições
-- Funciona com dados categóricos
-
-### Gráfico de Dispersão
-- Analisa correlações entre variáveis
-- Requer duas colunas numéricas
-
-## 🔧 Scripts Disponíveis
-
-- `npm run dev` - Inicia o servidor de desenvolvimento
-- `npm run build` - Cria build de produção
-- `npm run preview` - Visualiza o build de produção
-
-## 🤝 Contribuindo
-
-1. Faça um fork do projeto
-2. Crie uma branch para sua feature (`git checkout -b feature/AmazingFeature`)
-3. Commit suas mudanças (`git commit -m 'Add some AmazingFeature'`)
-4. Push para a branch (`git push origin feature/AmazingFeature`)
+1. Fork o projeto
+2. Crie uma branch para sua feature
+3. Commit suas mudanças
+4. Push para a branch
 5. Abra um Pull Request
 
 ## 📄 Licença
 
-Este projeto está sob a licença MIT. Veja o arquivo `LICENSE` para mais detalhes.
+Este projeto está sob a licença MIT.
 
-## 🐛 Problemas Conhecidos
+## 🆘 Suporte
 
-- Arquivos CSV muito grandes podem causar lentidão
-- Alguns caracteres especiais podem não ser exibidos corretamente
-- Gráficos de dispersão requerem pelo menos 2 colunas numéricas
+Para dúvidas ou problemas:
+- Verifique se o arquivo CSV está no formato correto do GLPI
+- Confirme se todos os campos necessários estão presentes
+- Teste com diferentes navegadores se houver problemas
 
-## 📞 Suporte
+---
 
-Se você encontrar algum problema ou tiver sugestões, abra uma issue no repositório. 
+**Desenvolvido para Analistas de TI** 🎯 
