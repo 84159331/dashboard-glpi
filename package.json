@@ -1,0 +1,31 @@
+{
+  "name": "dashboard-csv",
+  "version": "1.0.0",
+  "description": "Dashboard interativo para visualização de dados CSV",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "start": "vite"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "recharts": "^2.8.0",
+    "papaparse": "^5.4.1",
+    "lucide-react": "^0.294.0",
+    "tailwindcss": "^3.3.6",
+    "autoprefixer": "^10.4.16",
+    "postcss": "^8.4.32"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.37",
+    "@types/react-dom": "^18.2.15",
+    "@vitejs/plugin-react": "^4.1.1",
+    "vite": "^4.5.0"
+  },
+  "keywords": ["dashboard", "csv", "react", "visualization"],
+  "author": "Seu Nome",
+  "license": "MIT"
+} 
