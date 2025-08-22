@@ -1,13 +1,14 @@
 import React, { useState, useMemo } from 'react'
-import { RotateCcw, Download, Filter, BarChart3, Table, PieChart, FolderOpen } from 'lucide-react'
+import { RotateCcw, Download, Filter, BarChart3, Table, PieChart, FolderOpen, Star } from 'lucide-react'
 import TicketTable from './TicketTable'
 import TicketCharts from './TicketCharts'
 import TicketStats from './TicketStats'
 import CategoryAnalysis from './CategoryAnalysis'
+import EvaluationSummary from './EvaluationSummary'
 
 const Dashboard = ({ data, columns, onReset }) => {
   const [chartType, setChartType] = useState('status')
-  const [viewMode, setViewMode] = useState('stats') // stats, charts, table, category
+  const [viewMode, setViewMode] = useState('stats') // stats, charts, table, category, evaluations
 
   const handleExportCSV = () => {
     const csvContent = [
@@ -36,6 +37,8 @@ const Dashboard = ({ data, columns, onReset }) => {
         return <TicketTable data={data} />
       case 'category':
         return <CategoryAnalysis data={data} />
+      case 'evaluations':
+        return <EvaluationSummary />
       default:
         return <TicketStats data={data} />
     }
@@ -79,7 +82,7 @@ const Dashboard = ({ data, columns, onReset }) => {
             </h3>
             
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
                 <button
                   onClick={() => setViewMode('stats')}
                   className={`flex items-center gap-2 px-4 py-3 rounded-lg border transition-colors ${
@@ -127,6 +130,18 @@ const Dashboard = ({ data, columns, onReset }) => {
                   <FolderOpen className="h-4 w-4" />
                   <span>Por Categoria</span>
                 </button>
+                
+                <button
+                  onClick={() => setViewMode('evaluations')}
+                  className={`flex items-center gap-2 px-4 py-3 rounded-lg border transition-colors ${
+                    viewMode === 'evaluations'
+                      ? 'bg-primary-600 text-white border-primary-600'
+                      : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  <Star className="h-4 w-4" />
+                  <span>Avaliações</span>
+                </button>
               </div>
 
               {viewMode === 'charts' && (
@@ -153,6 +168,7 @@ const Dashboard = ({ data, columns, onReset }) => {
                 <p>• <strong>Gráficos:</strong> Visualizações interativas dos dados</p>
                 <p>• <strong>Tabela:</strong> Lista detalhada com busca e filtros</p>
                 <p>• <strong>Por Categoria:</strong> Análise específica por categoria com avaliação</p>
+                <p>• <strong>Avaliações:</strong> Resumo e histórico das avaliações realizadas</p>
               </div>
             </div>
           </div>
@@ -178,6 +194,10 @@ const Dashboard = ({ data, columns, onReset }) => {
               <div className="flex items-center space-x-3">
                 <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
                 <span className="text-sm text-gray-700">Métricas de SLA</span>
+              </div>
+              <div className="flex items-center space-x-3">
+                <div className="w-2 h-2 bg-pink-500 rounded-full"></div>
+                <span className="text-sm text-gray-700">Histórico de avaliações</span>
               </div>
             </div>
           </div>
