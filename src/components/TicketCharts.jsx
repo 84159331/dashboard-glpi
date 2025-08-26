@@ -1,162 +1,75 @@
 import React, { useMemo } from 'react'
 import {
-  BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
-  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
+	BarChart, Bar, Line, PieChart, Pie, Cell,
+	XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ComposedChart
 } from 'recharts'
 
-const TicketCharts = ({ data, chartType }) => {
-  const chartData = useMemo(() => {
-    if (!data || data.length === 0) return []
+const TicketCharts = ({ data }) => {
+	const statusData = useMemo(() => {
+		if (!data || data.length === 0) return []
+		return prepareStatusData(data)
+	}, [data])
 
-    switch (chartType) {
-      case 'status':
-        return prepareStatusData(data)
-      case 'priority':
-        return preparePriorityData(data)
-      case 'category':
-        return prepareCategoryData(data)
-      case 'timeline':
-        return prepareTimelineData(data)
-      case 'sla':
-        return prepareSLAData(data)
-      default:
-        return []
-    }
-  }, [data, chartType])
+	const timelineData = useMemo(() => {
+		if (!data || data.length === 0) return []
+		return prepareMonthlyOpenClosedData(data)
+	}, [data])
 
-  const colors = [
-    '#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6',
-    '#06b6d4', '#84cc16', '#f97316', '#ec4899', '#6366f1'
-  ]
+	const colors = [
+		'#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6',
+		'#06b6d4', '#84cc16', '#f97316', '#ec4899', '#6366f1'
+	]
 
-  const renderChart = () => {
-    if (chartData.length === 0) {
-      return (
-        <div className="flex items-center justify-center h-64 text-gray-500">
-          <p>Nenhum dado disponível para visualização</p>
-        </div>
-      )
-    }
+	return (
+		<div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+			<div className="bg-gray-900 rounded-lg p-4 border border-gray-700">
+				<h3 className="text-white font-semibold mb-4">Chamados abertos por mês</h3>
+				{timelineData.length === 0 ? (
+					<div className="flex items-center justify-center h-64 text-gray-500">Nenhum dado disponível</div>
+				) : (
+					<ResponsiveContainer width="100%" height={360}>
+						<ComposedChart data={timelineData}>
+							<CartesianGrid stroke="#374151" strokeDasharray="3 3" />
+							<XAxis dataKey="mes" stroke="#9ca3af" />
+							<YAxis stroke="#9ca3af" />
+							<Tooltip contentStyle={{ backgroundColor: '#111827', border: '1px solid #374151', color: '#e5e7eb' }} />
+							<Legend wrapperStyle={{ color: '#e5e7eb' }} />
+							<Bar dataKey="abertos" name="Abertos" fill="#3b82f6" radius={[4,4,0,0]} />
+							<Line type="monotone" dataKey="fechados" name="Fechados" stroke="#ef4444" strokeWidth={2} dot={{ r: 3 }} />
+						</ComposedChart>
+					</ResponsiveContainer>
+				)}
+			</div>
 
-    switch (chartType) {
-      case 'status':
-        return (
-          <ResponsiveContainer width="100%" height={400}>
-            <PieChart>
-              <Pie
-                data={chartData}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                outerRadius={80}
-                fill="#8884d8"
-                dataKey="value"
-              >
-                {chartData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
-                ))}
-              </Pie>
-              <Tooltip />
-              <Legend />
-            </PieChart>
-          </ResponsiveContainer>
-        )
-
-      case 'priority':
-        return (
-          <ResponsiveContainer width="100%" height={400}>
-            <BarChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Bar dataKey="value" fill="#3b82f6" />
-            </BarChart>
-          </ResponsiveContainer>
-        )
-
-      case 'category':
-        return (
-          <ResponsiveContainer width="100%" height={400}>
-            <BarChart data={chartData} layout="horizontal">
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis type="number" />
-              <YAxis dataKey="name" type="category" width={200} />
-              <Tooltip />
-              <Legend />
-              <Bar dataKey="value" fill="#10b981" />
-            </BarChart>
-          </ResponsiveContainer>
-        )
-
-      case 'timeline':
-        return (
-          <ResponsiveContainer width="100%" height={400}>
-            <LineChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="date" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Line 
-                type="monotone" 
-                dataKey="tickets" 
-                stroke="#3b82f6" 
-                strokeWidth={2}
-                name="Chamados"
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        )
-
-      case 'sla':
-        return (
-          <ResponsiveContainer width="100%" height={400}>
-            <BarChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Bar dataKey="dentroSLA" fill="#10b981" name="Dentro do SLA" />
-              <Bar dataKey="excedidoSLA" fill="#ef4444" name="SLA Excedido" />
-            </BarChart>
-          </ResponsiveContainer>
-        )
-
-      default:
-        return (
-          <div className="flex items-center justify-center h-64 text-gray-500">
-            <p>Tipo de gráfico não suportado</p>
-          </div>
-        )
-    }
-  }
-
-  const getChartTitle = () => {
-    const titles = {
-      status: 'Distribuição por Status',
-      priority: 'Chamados por Prioridade',
-      category: 'Top Categorias',
-      timeline: 'Evolução Temporal',
-      sla: 'Análise de SLA'
-    }
-    return titles[chartType] || 'Análise de Chamados'
-  }
-
-  return (
-    <div className="space-y-4">
-      <div className="text-center">
-        <h3 className="text-lg font-semibold text-gray-900 mb-2">
-          {getChartTitle()}
-        </h3>
-      </div>
-      
-      {renderChart()}
-    </div>
-  )
+			<div className="bg-gray-900 rounded-lg p-4 border border-gray-700">
+				<h3 className="text-white font-semibold mb-4">Chamados por Status</h3>
+				{statusData.length === 0 ? (
+					<div className="flex items-center justify-center h-64 text-gray-500">Nenhum dado disponível</div>
+				) : (
+					<ResponsiveContainer width="100%" height={360}>
+						<PieChart>
+							<Pie
+								data={statusData}
+								cx="50%"
+								cy="50%"
+								innerRadius={60}
+								outerRadius={100}
+								paddingAngle={2}
+								label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+								dataKey="value"
+							>
+								{statusData.map((entry, index) => (
+									<Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
+								))}
+							</Pie>
+							<Tooltip contentStyle={{ backgroundColor: '#111827', border: '1px solid #374151', color: '#e5e7eb' }} />
+							<Legend wrapperStyle={{ color: '#e5e7eb' }} />
+						</PieChart>
+					</ResponsiveContainer>
+				)}
+			</div>
+		</div>
+	)
 }
 
 // Funções auxiliares para preparar dados
@@ -202,27 +115,43 @@ const prepareCategoryData = (data) => {
     }))
 }
 
-const prepareTimelineData = (data) => {
-  const dateCount = data.reduce((acc, ticket) => {
-    const dateStr = ticket['Data de abertura']
-    if (dateStr) {
-      const date = new Date(dateStr.split(' ')[0].split('/').reverse().join('-'))
-      const monthYear = `${date.getMonth() + 1}/${date.getFullYear()}`
-      acc[monthYear] = (acc[monthYear] || 0) + 1
-    }
-    return acc
-  }, {})
+const parsePtBrDate = (dateStr) => {
+	if (!dateStr) return null
+	const [day, month, year] = dateStr.split(' ')[0].split('/')
+	const d = new Date(Number(year), Number(month) - 1, Number(day))
+	return isNaN(d.getTime()) ? null : d
+}
 
-  return Object.entries(dateCount)
-    .sort(([a], [b]) => {
-      const [monthA, yearA] = a.split('/')
-      const [monthB, yearB] = b.split('/')
-      return new Date(yearA, monthA - 1) - new Date(yearB, monthB - 1)
-    })
-    .map(([date, tickets]) => ({
-      date,
-      tickets
-    }))
+const formatMonthYear = (date) => {
+	const mm = String(date.getMonth() + 1).padStart(2, '0')
+	return `${mm}/${date.getFullYear()}`
+}
+
+const prepareMonthlyOpenClosedData = (data) => {
+	const byMonth = {}
+	for (const ticket of data) {
+		const openDate = parsePtBrDate(ticket['Data de abertura'])
+		if (openDate) {
+			const key = formatMonthYear(openDate)
+			byMonth[key] = byMonth[key] || { mes: key, abertos: 0, fechados: 0 }
+			byMonth[key].abertos += 1
+		}
+		const closeDate = parsePtBrDate(ticket['Data de fechamento']) || parsePtBrDate(ticket['Data de fechamento prevista'])
+		if (closeDate) {
+			const key = formatMonthYear(closeDate)
+			byMonth[key] = byMonth[key] || { mes: key, abertos: 0, fechados: 0 }
+			byMonth[key].fechados += 1
+		}
+	}
+
+	const result = Object.values(byMonth)
+		.sort((a, b) => {
+			const [ma, ya] = a.mes.split('/')
+			const [mb, yb] = b.mes.split('/')
+			return new Date(Number(ya), Number(ma) - 1) - new Date(Number(yb), Number(mb) - 1)
+		})
+
+	return result.slice(-12) // últimos 12 meses
 }
 
 const prepareSLAData = (data) => {
