@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import CSVUploader from './components/CSVUploader'
 import Dashboard from './components/Dashboard'
 import Header from './components/Header'
+import CoreplanIntegration from './components/CoreplanIntegration'
 import { useNotifications, NotificationContainer } from './components/Notification'
 import LoadingSpinner from './components/LoadingSpinner'
 
@@ -9,6 +10,7 @@ function App() {
   const [data, setData] = useState(null)
   const [columns, setColumns] = useState([])
   const [isLoading, setIsLoading] = useState(false)
+  const [currentView, setCurrentView] = useState('upload') // 'upload', 'dashboard', 'integration'
   const { notifications, addNotification, removeNotification } = useNotifications()
 
   const handleDataLoaded = (parsedData, columnNames) => {
@@ -32,12 +34,17 @@ function App() {
   const handleReset = () => {
     setData(null)
     setColumns([])
+    setCurrentView('upload')
     addNotification({
       type: 'info',
       title: 'Dashboard Resetado',
       message: 'Você pode carregar um novo arquivo CSV.',
       duration: 2000
     })
+  }
+
+  const handleViewChange = (view) => {
+    setCurrentView(view)
   }
 
   // Efeito para aplicar tema salvo
@@ -54,7 +61,7 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
-      <Header onHomeClick={handleReset} />
+      <Header onHomeClick={handleReset} onViewChange={handleViewChange} currentView={currentView} />
       
       <main className="container-responsive py-8">
         {isLoading ? (
@@ -64,6 +71,10 @@ function App() {
               text="Processando dados..." 
               variant="primary" 
             />
+          </div>
+        ) : currentView === 'integration' ? (
+          <div className="animate-fade-in">
+            <CoreplanIntegration />
           </div>
         ) : !data ? (
           <div className="animate-fade-in">

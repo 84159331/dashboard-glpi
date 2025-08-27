@@ -118,6 +118,16 @@ Um dashboard interativo e especializado para análise de tickets do GLPI, desenv
 - **Análise por Categoria**: Visualização específica com avaliação
 - **Avaliações**: Sistema completo de feedback
 
+### 🔗 **Integração Coreplan GLPI**
+- **Conexão Automática**: Integração direta com a API do GLPI da Coreplan
+- **Sincronização em Tempo Real**: Monitoramento contínuo de novos tickets
+- **Configuração de Credenciais**: Interface segura para configuração de acesso
+- **Histórico de Sincronização**: Rastreamento completo de todas as operações
+- **Exportação de Dados**: Exportação em CSV e JSON dos tickets sincronizados
+- **Notificações Inteligentes**: Alertas automáticos para novos chamados
+- **Controle de Monitoramento**: Iniciar/parar sincronização automática
+- **Intervalos Configuráveis**: Sincronização a cada 1, 5, 10, 30 minutos ou 1 hora
+
 ### 🔍 **Análise Detalhada de Chamados**
 - **Visualização Completa**: Modal detalhado com glassmorphism
 - **Métricas de Tempo**: Tempo de espera, atribuição e solução
@@ -177,16 +187,24 @@ http://localhost:3000
 
 ## 📁 Como Usar
 
-### 1. **Exportar do GLPI**
+### 1. **Método Tradicional - Upload de CSV**
 - Acesse o GLPI
 - Vá em "Tickets" → "Lista de tickets"
 - Aplique os filtros desejados
 - Clique em "Exportar" → "CSV"
-
-### 2. **Carregar no Dashboard**
 - Arraste o arquivo CSV para a área de upload
 - Ou clique para selecionar o arquivo
 - O sistema validará automaticamente se é um arquivo GLPI
+
+### 2. **Método Avançado - Integração Direta**
+- Navegue para "Integração Coreplan" no menu superior
+- Configure suas credenciais do GLPI:
+  - URL Base: `https://suporte.coreplan.com.br`
+  - Nome de usuário: Seu usuário GLPI
+  - Senha: Sua senha GLPI
+- Clique em "Testar Conexão" para verificar
+- Configure o intervalo de sincronização (1 minuto a 1 hora)
+- Clique em "Iniciar Monitoramento" para sincronização automática
 
 ### 3. **Navegar pelas Visualizações**
 - **Estatísticas**: Visão geral dos KPIs com cards modernos
@@ -200,6 +218,12 @@ http://localhost:3000
 - Visualize todos os detalhes do chamado
 - Avalie a solução (positiva ou negativamente)
 - Adicione comentários opcionais
+
+### 5. **Gerenciar Integração**
+- **Monitoramento**: Visualize status da conexão e sincronização
+- **Histórico**: Acompanhe todas as operações de sincronização
+- **Exportação**: Exporte tickets em CSV ou JSON
+- **Notificações**: Receba alertas automáticos para novos tickets
 
 ## 🎨 **Personalização de Temas**
 

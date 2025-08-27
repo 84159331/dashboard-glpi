@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { ArrowLeft, BarChart3, Database, Headphones, Activity, Bell, Settings } from 'lucide-react'
 import ThemeToggle from './ThemeToggle'
 
-const Header = ({ onHomeClick }) => {
+const Header = ({ onHomeClick, onViewChange, currentView }) => {
   const [now, setNow] = useState(new Date())
   const [isVisible, setIsVisible] = useState(false)
 
@@ -48,10 +48,24 @@ const Header = ({ onHomeClick }) => {
             <div className="flex items-center space-x-3">
               <ArrowLeft className="h-6 w-6 text-gray-400" />
               <button 
-                onClick={onHomeClick} 
-                className="text-2xl font-bold text-white hover:text-blue-400 transition-colors duration-300"
+                onClick={() => onViewChange('upload')}
+                className={`text-2xl font-bold transition-colors duration-300 ${
+                  currentView === 'upload' ? 'text-blue-400' : 'text-white hover:text-blue-400'
+                }`}
               >
                 SLA de Atendimento
+              </button>
+            </div>
+            
+            <div className="flex items-center space-x-3">
+              <Database className="h-6 w-6 text-gray-400" />
+              <button 
+                onClick={() => onViewChange('integration')}
+                className={`text-lg font-bold transition-colors duration-300 ${
+                  currentView === 'integration' ? 'text-blue-400' : 'text-white hover:text-blue-400'
+                }`}
+              >
+                Integração Coreplan
               </button>
             </div>
           </div>
