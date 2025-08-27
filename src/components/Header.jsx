@@ -1,7 +1,7 @@
 import React from 'react'
 import { ArrowLeft, BarChart3, Database, Headphones, Activity } from 'lucide-react'
 
-const Header = () => {
+const Header = ({ onHomeClick }) => {
   return (
     <header className="bg-gray-800 shadow-lg border-b border-gray-700">
       <div className="container mx-auto px-4 py-4">
@@ -11,14 +11,18 @@ const Header = () => {
               <div className="flex items-center space-x-2">
                 <BarChart3 className="h-8 w-8 text-blue-400" />
                 <div className="text-left">
-                  <h2 className="text-lg font-bold text-white">JADNEY RANES</h2>
+                  <button onClick={onHomeClick} className="text-lg font-bold text-white hover:underline">
+                    JADNEY RANES
+                  </button>
                   <p className="text-sm text-gray-300">DASHBOARD CHAMADOS GPLI</p>
                 </div>
               </div>
             </div>
             <div className="flex items-center space-x-3">
               <ArrowLeft className="h-6 w-6 text-gray-400" />
-              <h1 className="text-2xl font-bold text-white">SLA de Atendimento</h1>
+              <button onClick={onHomeClick} className="text-2xl font-bold text-white hover:underline">
+                SLA de Atendimento
+              </button>
             </div>
           </div>
           <div className="text-sm text-gray-400">

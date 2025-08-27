@@ -14,7 +14,7 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-900">
-      <Header />
+      <Header onHomeClick={() => setData(null)} />
       <main className="container mx-auto px-4 py-8">
         {!data ? (
           <CSVUploader onDataLoaded={handleDataLoaded} />
