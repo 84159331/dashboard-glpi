@@ -10,6 +10,7 @@ const Dashboard = ({ data, columns, onReset }) => {
   const [chartType, setChartType] = useState('status')
   const [viewMode, setViewMode] = useState('stats') // stats, charts, table, category, evaluations
   const [tableFilterMode, setTableFilterMode] = useState('none')
+  const [tableInitialSearch, setTableInitialSearch] = useState('')
 
   const handleExportCSV = () => {
     const csvContent = [
@@ -34,20 +35,28 @@ const Dashboard = ({ data, columns, onReset }) => {
         return (
           <TicketStats
             data={data}
-            onClickOpenTickets={() => { setViewMode('table'); setTableFilterMode('open') }}
-            onClickAllTickets={() => { setViewMode('table'); setTableFilterMode('all') }}
-            onClickSlaMet={() => { setViewMode('table'); setTableFilterMode('slaMet') }}
-            onClickSlaExceeded={() => { setViewMode('table'); setTableFilterMode('slaExceeded') }}
+            onClickOpenTickets={() => { setViewMode('table'); setTableFilterMode('open'); setTableInitialSearch('') }}
+            onClickAllTickets={() => { setViewMode('table'); setTableFilterMode('all'); setTableInitialSearch('') }}
+            onClickSlaMet={() => { setViewMode('table'); setTableFilterMode('slaMet'); setTableInitialSearch('') }}
+            onClickSlaExceeded={() => { setViewMode('table'); setTableFilterMode('slaExceeded'); setTableInitialSearch('') }}
           />
         )
       case 'charts':
         return <TicketCharts data={data} chartType={chartType} />
       case 'table':
-        return <TicketTable data={data} filterMode={tableFilterMode} />
+        return <TicketTable data={data} filterMode={tableFilterMode} initialSearchTerm={tableInitialSearch} />
       case 'category':
         return <CategoryAnalysis data={data} />
       case 'evaluations':
-        return <EvaluationSummary />
+        return (
+          <EvaluationSummary
+            onJumpToTicket={(id) => {
+              setViewMode('table')
+              setTableFilterMode('all')
+              setTableInitialSearch(id)
+            }}
+          />
+        )
       default:
         return <TicketStats data={data} />
     }

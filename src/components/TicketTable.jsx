@@ -3,7 +3,7 @@ import { ChevronLeft, ChevronRight, Search, Filter, Clock, AlertTriangle, Eye } 
 import TicketDetails from './TicketDetails'
 
 // filterMode: 'none' | 'open' | 'all' | 'slaMet' | 'slaExceeded'
-const TicketTable = ({ data, filterMode = 'none' }) => {
+const TicketTable = ({ data, filterMode = 'none', initialSearchTerm = '' }) => {
   const [currentPage, setCurrentPage] = useState(1)
   const [searchTerm, setSearchTerm] = useState('')
   const [sortColumn, setSortColumn] = useState(null)
@@ -17,6 +17,13 @@ const TicketTable = ({ data, filterMode = 'none' }) => {
   useEffect(() => {
     setCurrentPage(1)
   }, [filterMode])
+
+  useEffect(() => {
+    if (typeof initialSearchTerm === 'string') {
+      setSearchTerm(initialSearchTerm)
+      setCurrentPage(1)
+    }
+  }, [initialSearchTerm])
 
   // Filtrar dados
   const filteredData = data.filter(ticket => {
