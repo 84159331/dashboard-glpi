@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react'
-import { ChevronLeft, ChevronRight, Search, Filter, Clock, AlertTriangle, Eye } from 'lucide-react'
+import React, { useState, useEffect, useMemo } from 'react'
+import { ChevronLeft, ChevronRight, Search, Filter, Clock, AlertTriangle, Eye, Download } from 'lucide-react'
 import TicketDetails from './TicketDetails'
 
 // filterMode: 'none' | 'open' | 'all' | 'slaMet' | 'slaExceeded'
@@ -10,8 +10,11 @@ const TicketTable = ({ data, filterMode = 'none', initialSearchTerm = '' }) => {
   const [sortDirection, setSortDirection] = useState('asc')
   const [statusFilter, setStatusFilter] = useState('all')
   const [priorityFilter, setPriorityFilter] = useState('all')
+  const [dateFilter, setDateFilter] = useState('all')
+  const [technicianFilter, setTechnicianFilter] = useState('all')
   const [selectedTicket, setSelectedTicket] = useState(null)
   const [isDetailsOpen, setIsDetailsOpen] = useState(false)
+  const [isExporting, setIsExporting] = useState(false)
   const itemsPerPage = 50
 
   useEffect(() => {
@@ -25,7 +28,16 @@ const TicketTable = ({ data, filterMode = 'none', initialSearchTerm = '' }) => {
     }
   }, [initialSearchTerm])
 
-  // Filtrar dados
+  // Obter lista única de técnicos para filtro
+  const technicians = useMemo(() => {
+    const techSet = new Set()
+    data.forEach(ticket => {
+      const tech = ticket['Técnico responsável'] || ticket['Atribuído - Técnico']
+      if (tech) techSet.add(tech)
+    })
+    return Array.from(techSet).sort()
+  }, [data])
+
   const filteredData = data.filter(ticket => {
     const matchesSearch = Object.values(ticket).some(value =>
       String(value).toLowerCase().includes(searchTerm.toLowerCase())
@@ -33,6 +45,31 @@ const TicketTable = ({ data, filterMode = 'none', initialSearchTerm = '' }) => {
     
     const isOpen = ticket.Status !== 'Solucionado' && ticket.Status !== 'Fechado'
     const isSlaExceeded = ticket['Tempo para resolver excedido'] === 'Sim'
+    const technician = ticket['Técnico responsável'] || ticket['Atribuído - Técnico'] || 'Não atribuído'
+    
+    // Filtro por data
+    const ticketDate = ticket['Data de abertura']
+    const matchesDate = (() => {
+      if (dateFilter === 'all') return true
+      if (!ticketDate) return false
+      
+      const date = new Date(ticketDate.split(' ')[0].split('/').reverse().join('-'))
+      const now = new Date()
+      
+      switch (dateFilter) {
+        case 'today':
+          return date.toDateString() === now.toDateString()
+        case 'week':
+          const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+          return date >= weekAgo
+        case 'month':
+          const monthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate())
+          return date >= monthAgo
+        default:
+          return true
+      }
+    })()
+    
     const matchesByMode = (() => {
       switch (filterMode) {
         case 'open':
@@ -50,8 +87,9 @@ const TicketTable = ({ data, filterMode = 'none', initialSearchTerm = '' }) => {
 
     const matchesStatus = matchesByMode
     const matchesPriority = priorityFilter === 'all' || ticket.Prioridade === priorityFilter
+    const matchesTechnician = technicianFilter === 'all' || technician === technicianFilter
     
-    return matchesSearch && matchesStatus && matchesPriority
+    return matchesSearch && matchesStatus && matchesPriority && matchesDate && matchesTechnician
   })
 
   // Ordenar dados
@@ -120,6 +158,32 @@ const TicketTable = ({ data, filterMode = 'none', initialSearchTerm = '' }) => {
     alert(`Avaliação ${evaluation === 'positive' ? 'positiva' : 'negativa'} registrada para o chamado #${ticketId}`)
   }
 
+  const handleExportData = () => {
+    setIsExporting(true)
+    
+    // Simular processamento
+    setTimeout(() => {
+      const csvContent = [
+        Object.keys(filteredData[0] || {}).join(';'),
+        ...filteredData.map(row => 
+          Object.values(row).map(val => `"${val || ''}"`).join(';')
+        )
+      ].join('\n')
+      
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+      const link = document.createElement('a')
+      const url = URL.createObjectURL(blob)
+      link.setAttribute('href', url)
+      link.setAttribute('download', `chamados_filtrados_${new Date().toISOString().split('T')[0]}.csv`)
+      link.style.visibility = 'hidden'
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(url)
+      setIsExporting(false)
+    }, 1000)
+  }
+
   const getStatusColor = (status) => {
     switch (status) {
       case 'Solucionado':
@@ -177,7 +241,7 @@ const TicketTable = ({ data, filterMode = 'none', initialSearchTerm = '' }) => {
             />
           </div>
           
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
@@ -199,11 +263,52 @@ const TicketTable = ({ data, filterMode = 'none', initialSearchTerm = '' }) => {
               <option value="Média">Média</option>
               <option value="Baixa">Baixa</option>
             </select>
+            
+            <select
+              value={dateFilter}
+              onChange={(e) => setDateFilter(e.target.value)}
+              className="px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="all">Todas as Datas</option>
+              <option value="today">Hoje</option>
+              <option value="week">Última Semana</option>
+              <option value="month">Último Mês</option>
+            </select>
+            
+            <select
+              value={technicianFilter}
+              onChange={(e) => setTechnicianFilter(e.target.value)}
+              className="px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="all">Todos os Técnicos</option>
+              {technicians.map(tech => (
+                <option key={tech} value={tech}>{tech}</option>
+              ))}
+            </select>
           </div>
         </div>
         
-        <div className="text-sm text-gray-400">
-          Mostrando {startIndex + 1}-{Math.min(endIndex, sortedData.length)} de {sortedData.length} chamados
+        <div className="flex items-center gap-4">
+          <div className="text-sm text-gray-400">
+            Mostrando {startIndex + 1}-{Math.min(endIndex, sortedData.length)} de {sortedData.length} chamados
+          </div>
+          <button
+            onClick={handleExportData}
+            disabled={isExporting || filteredData.length === 0}
+            className="flex items-center gap-2 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors text-sm"
+          >
+            {isExporting ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                Exportando...
+              </>
+            ) : (
+              <>
+                <Download className="h-4 w-4" />
+                Exportar CSV
+              </>
+            )}
+          </button>
         </div>
       </div>
 

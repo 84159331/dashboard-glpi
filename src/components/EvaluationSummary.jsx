@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Star, ThumbsUp, ThumbsDown, Calendar, MessageSquare } from 'lucide-react'
+import { Star, ThumbsUp, ThumbsDown, Calendar, MessageSquare, TrendingUp, Users, Award } from 'lucide-react'
 
 const EvaluationSummary = ({ onJumpToTicket }) => {
   const [evaluations, setEvaluations] = useState({})
@@ -24,6 +24,28 @@ const EvaluationSummary = ({ onJumpToTicket }) => {
   const averageStars = starReviews.length > 0
     ? (starReviews.reduce((sum, r) => sum + (r.stars || 0), 0) / starReviews.length).toFixed(1)
     : 0
+
+  // Cálculo do NPS (Net Promoter Score)
+  const calculateNPS = () => {
+    if (starReviews.length === 0) return 0
+    
+    const promoters = starReviews.filter(r => r.stars >= 4).length
+    const detractors = starReviews.filter(r => r.stars <= 2).length
+    const total = starReviews.length
+    
+    return Math.round(((promoters - detractors) / total) * 100)
+  }
+
+  const npsScore = calculateNPS()
+  const npsCategory = npsScore >= 50 ? 'Excelente' : npsScore >= 0 ? 'Bom' : npsScore >= -50 ? 'Regular' : 'Ruim'
+  const npsColor = npsScore >= 50 ? 'text-green-400' : npsScore >= 0 ? 'text-blue-400' : npsScore >= -50 ? 'text-yellow-400' : 'text-red-400'
+
+  // Distribuição de estrelas
+  const starDistribution = Array.from({ length: 6 }, (_, i) => {
+    const count = starReviews.filter(r => r.stars === i).length
+    const percentage = starReviews.length > 0 ? (count / starReviews.length * 100).toFixed(1) : 0
+    return { stars: i, count, percentage }
+  })
 
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('pt-BR', {
@@ -53,6 +75,64 @@ const EvaluationSummary = ({ onJumpToTicket }) => {
 
   return (
     <div className="space-y-6">
+      {/* Métricas de NPS */}
+      <div className="dashboard-card">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+          <Award className="h-5 w-5" />
+          Net Promoter Score (NPS)
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="text-center p-6 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border border-blue-200">
+            <div className={`text-4xl font-bold ${npsColor} mb-2`}>{npsScore}</div>
+            <div className="text-sm text-gray-600 mb-1">NPS Score</div>
+            <div className={`text-sm font-medium ${npsColor}`}>{npsCategory}</div>
+          </div>
+          
+          <div className="text-center p-6 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl border border-green-200">
+            <div className="text-4xl font-bold text-green-600 mb-2">
+              {starReviews.filter(r => r.stars >= 4).length}
+            </div>
+            <div className="text-sm text-gray-600 mb-1">Promotores</div>
+            <div className="text-sm font-medium text-green-600">(4-5 estrelas)</div>
+          </div>
+          
+          <div className="text-center p-6 bg-gradient-to-br from-red-50 to-pink-50 rounded-xl border border-red-200">
+            <div className="text-4xl font-bold text-red-600 mb-2">
+              {starReviews.filter(r => r.stars <= 2).length}
+            </div>
+            <div className="text-sm text-gray-600 mb-1">Detratores</div>
+            <div className="text-sm font-medium text-red-600">(0-2 estrelas)</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Distribuição de Estrelas */}
+      <div className="dashboard-card">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+          <TrendingUp className="h-5 w-5" />
+          Distribuição de Avaliações por Estrelas
+        </h3>
+        <div className="space-y-3">
+          {starDistribution.slice(1).reverse().map(({ stars, count, percentage }) => (
+            <div key={stars} className="flex items-center gap-4">
+              <div className="flex items-center gap-1 w-16">
+                <span className="text-sm font-medium text-gray-700">{stars}</span>
+                <Star className="h-4 w-4 text-yellow-400" fill="#FBBF24" />
+              </div>
+              <div className="flex-1 bg-gray-200 rounded-full h-3">
+                <div 
+                  className="bg-gradient-to-r from-yellow-400 to-orange-500 h-3 rounded-full transition-all duration-500"
+                  style={{ width: `${percentage}%` }}
+                ></div>
+              </div>
+              <div className="text-sm text-gray-600 w-20 text-right">
+                {count} ({percentage}%)
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* Avaliações por Estrelas Recebidas */}
       <div className="dashboard-card">
         <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
@@ -94,7 +174,8 @@ const EvaluationSummary = ({ onJumpToTicket }) => {
           <p className="text-gray-600">Ainda não há avaliações por estrelas.</p>
         )}
       </div>
-      {/* Resumo Geral */}
+
+      {/* Resumo Geral (apenas leitura) */}
       <div className="dashboard-card">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
