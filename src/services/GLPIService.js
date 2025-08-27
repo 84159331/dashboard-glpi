@@ -9,19 +9,42 @@ class GLPIService {
   // Autenticação com o GLPI
   async authenticate() {
     try {
+      // Verificar se a URL base é válida
+      if (!this.baseUrl || !this.baseUrl.startsWith('http')) {
+        throw new Error('URL base inválida')
+      }
+
+      // Verificar se as credenciais estão presentes
+      if (!this.credentials.username || !this.credentials.password) {
+        throw new Error('Credenciais incompletas')
+      }
+
       const response = await fetch(`${this.baseUrl}/apirest.php/initSession`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Basic ${btoa(`${this.credentials.username}:${this.credentials.password}`)}`
-        }
+        },
+        mode: 'cors',
+        credentials: 'omit'
       })
 
       if (!response.ok) {
-        throw new Error(`Erro de autenticação: ${response.status}`)
+        if (response.status === 401) {
+          throw new Error('Credenciais inválidas')
+        } else if (response.status === 404) {
+          throw new Error('API GLPI não encontrada. Verifique a URL base.')
+        } else {
+          throw new Error(`Erro de autenticação: ${response.status} - ${response.statusText}`)
+        }
       }
 
       const data = await response.json()
+      
+      if (!data.session_token) {
+        throw new Error('Token de sessão não recebido')
+      }
+      
       this.sessionToken = data.session_token
       this.isAuthenticated = true
       
@@ -32,6 +55,15 @@ class GLPIService {
       }
     } catch (error) {
       console.error('Erro na autenticação GLPI:', error)
+      
+      // Tratar erros específicos
+      if (error.name === 'TypeError' && error.message.includes('fetch')) {
+        return {
+          success: false,
+          error: 'Erro de rede. Verifique sua conexão e a URL do GLPI.'
+        }
+      }
+      
       return {
         success: false,
         error: error.message
@@ -101,17 +133,42 @@ class GLPIService {
         headers: {
           'Content-Type': 'application/json',
           'Session-Token': this.sessionToken
-        }
+        },
+        mode: 'cors',
+        credentials: 'omit'
       })
 
       if (!response.ok) {
-        throw new Error(`Erro ao buscar tickets: ${response.status}`)
+        if (response.status === 401) {
+          // Token expirado, tentar reautenticar
+          this.isAuthenticated = false
+          const authResult = await this.authenticate()
+          if (!authResult.success) {
+            throw new Error('Sessão expirada. Faça login novamente.')
+          }
+          // Tentar novamente com novo token
+          return this.getTickets(filters)
+        } else {
+          throw new Error(`Erro ao buscar tickets: ${response.status} - ${response.statusText}`)
+        }
       }
 
       const data = await response.json()
+      
+      if (!data || !Array.isArray(data.data)) {
+        console.warn('Resposta inesperada do GLPI:', data)
+        return []
+      }
+      
       return this.formatTickets(data.data || [])
     } catch (error) {
       console.error('Erro ao buscar tickets:', error)
+      
+      // Tratar erros específicos
+      if (error.name === 'TypeError' && error.message.includes('fetch')) {
+        throw new Error('Erro de rede. Verifique sua conexão.')
+      }
+      
       throw error
     }
   }
@@ -279,30 +336,73 @@ class GLPIService {
 
   // Formatar dados do ticket
   formatTicket(rawTicket) {
-    return {
-      id: rawTicket.id || rawTicket.tickets_id,
-      title: rawTicket.name || rawTicket.content,
-      description: rawTicket.content || '',
-      status: this.getStatusName(rawTicket.status),
-      priority: this.getPriorityName(rawTicket.priority),
-      requester: rawTicket.users_id_recipient || 'N/A',
-      assignedTo: rawTicket.users_id_assign || 'N/A',
-      createdAt: rawTicket.date_creation || new Date().toISOString(),
-      updatedAt: rawTicket.date_mod || new Date().toISOString(),
-      sla: rawTicket.sla_waiting_duration || 0,
-      category: rawTicket.itilcategories_id || 'Geral',
-      urgency: rawTicket.urgency || 1,
-      impact: rawTicket.impact || 1,
-      timeToResolve: rawTicket.time_to_resolve || null,
-      timeToOwn: rawTicket.time_to_own || null,
-      internalTimeToResolve: rawTicket.internal_time_to_resolve || null,
-      internalTimeToOwn: rawTicket.internal_time_to_own || null
+    if (!rawTicket || typeof rawTicket !== 'object') {
+      throw new Error('Ticket inválido')
+    }
+
+    try {
+      return {
+        id: rawTicket.id || rawTicket.tickets_id || 'N/A',
+        title: rawTicket.name || rawTicket.content || 'Sem título',
+        description: rawTicket.content || rawTicket.description || '',
+        status: this.getStatusName(rawTicket.status),
+        priority: this.getPriorityName(rawTicket.priority),
+        requester: rawTicket.users_id_recipient || rawTicket.requester || 'N/A',
+        assignedTo: rawTicket.users_id_assign || rawTicket.assigned_to || 'N/A',
+        createdAt: rawTicket.date_creation || rawTicket.created_at || new Date().toISOString(),
+        updatedAt: rawTicket.date_mod || rawTicket.updated_at || new Date().toISOString(),
+        sla: rawTicket.sla_waiting_duration || rawTicket.sla || 0,
+        category: rawTicket.itilcategories_id || rawTicket.category || 'Geral',
+        urgency: rawTicket.urgency || 1,
+        impact: rawTicket.impact || 1,
+        timeToResolve: rawTicket.time_to_resolve || null,
+        timeToOwn: rawTicket.time_to_own || null,
+        internalTimeToResolve: rawTicket.internal_time_to_resolve || null,
+        internalTimeToOwn: rawTicket.internal_time_to_own || null
+      }
+    } catch (error) {
+      console.error('Erro ao formatar ticket:', error, rawTicket)
+      // Retornar ticket básico em caso de erro
+      return {
+        id: 'Erro',
+        title: 'Erro ao processar ticket',
+        description: 'Não foi possível processar este ticket',
+        status: 'Erro',
+        priority: 'N/A',
+        requester: 'N/A',
+        assignedTo: 'N/A',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        sla: 0,
+        category: 'Erro',
+        urgency: 1,
+        impact: 1,
+        timeToResolve: null,
+        timeToOwn: null,
+        internalTimeToResolve: null,
+        internalTimeToOwn: null
+      }
     }
   }
 
   // Formatar lista de tickets
   formatTickets(rawTickets) {
-    return rawTickets.map(ticket => this.formatTicket(ticket))
+    if (!Array.isArray(rawTickets)) {
+      console.warn('formatTickets: rawTickets não é um array:', rawTickets)
+      return []
+    }
+    
+    return rawTickets
+      .filter(ticket => ticket && typeof ticket === 'object')
+      .map(ticket => {
+        try {
+          return this.formatTicket(ticket)
+        } catch (error) {
+          console.error('Erro ao formatar ticket:', error, ticket)
+          return null
+        }
+      })
+      .filter(ticket => ticket !== null)
   }
 
   // Mapear códigos de status para nomes
@@ -352,29 +452,45 @@ class GLPIService {
 
   // Exportar tickets para CSV
   async exportTicketsToCSV(tickets) {
-    const headers = [
-      'ID', 'Título', 'Descrição', 'Status', 'Prioridade', 'Solicitante',
-      'Responsável', 'Categoria', 'Data Criação', 'Data Modificação', 'SLA'
-    ]
+    try {
+      if (!Array.isArray(tickets)) {
+        throw new Error('Lista de tickets inválida')
+      }
 
-    const csvContent = [
-      headers.join(','),
-      ...tickets.map(ticket => [
-        ticket.id,
-        `"${ticket.title.replace(/"/g, '""')}"`,
-        `"${ticket.description.replace(/"/g, '""')}"`,
-        ticket.status,
-        ticket.priority,
-        ticket.requester,
-        ticket.assignedTo,
-        ticket.category,
-        ticket.createdAt,
-        ticket.updatedAt,
-        ticket.sla
-      ].join(','))
-    ].join('\n')
+      const headers = [
+        'ID', 'Título', 'Descrição', 'Status', 'Prioridade', 'Solicitante',
+        'Responsável', 'Categoria', 'Data Criação', 'Data Modificação', 'SLA'
+      ]
 
-    return csvContent
+      const csvContent = [
+        headers.join(','),
+        ...tickets.map(ticket => {
+          try {
+            return [
+              ticket.id || 'N/A',
+              `"${(ticket.title || 'Sem título').replace(/"/g, '""')}"`,
+              `"${(ticket.description || '').replace(/"/g, '""')}"`,
+              ticket.status || 'N/A',
+              ticket.priority || 'N/A',
+              ticket.requester || 'N/A',
+              ticket.assignedTo || 'N/A',
+              ticket.category || 'N/A',
+              ticket.createdAt || 'N/A',
+              ticket.updatedAt || 'N/A',
+              ticket.sla || 0
+            ].join(',')
+          } catch (error) {
+            console.error('Erro ao processar ticket para CSV:', error, ticket)
+            return 'Erro,Erro ao processar ticket,,,,,,,,,'
+          }
+        })
+      ].join('\n')
+
+      return csvContent
+    } catch (error) {
+      console.error('Erro ao exportar tickets para CSV:', error)
+      throw new Error(`Erro na exportação CSV: ${error.message}`)
+    }
   }
 
   // Testar conexão
@@ -382,11 +498,11 @@ class GLPIService {
     try {
       const authResult = await this.authenticate()
       if (authResult.success) {
-        // Tentar buscar um ticket para verificar se a API está funcionando
-        await this.getTickets({ limit: 1 })
+        // Tentar buscar tickets para verificar se a API está funcionando
+        const tickets = await this.getTickets()
         return {
           success: true,
-          message: 'Conexão estabelecida com sucesso'
+          message: `Conexão estabelecida com sucesso. ${tickets.length} tickets encontrados.`
         }
       } else {
         return {
@@ -395,6 +511,7 @@ class GLPIService {
         }
       }
     } catch (error) {
+      console.error('Erro no teste de conexão:', error)
       return {
         success: false,
         error: error.message

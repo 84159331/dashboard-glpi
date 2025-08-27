@@ -20,7 +20,8 @@ import {
   Shield,
   Key,
   Eye,
-  EyeOff
+  EyeOff,
+  Trash2
 } from 'lucide-react'
 import { useNotifications } from './Notification'
 import GLPIService from '../services/GLPIService'
@@ -53,7 +54,18 @@ const CoreplanIntegration = () => {
   const monitoringRef = useRef(null)
 
   useEffect(() => {
-    loadSavedCredentials()
+    try {
+      loadSavedCredentials()
+    } catch (error) {
+      console.error('Erro ao carregar credenciais:', error)
+      addNotification({
+        type: 'error',
+        title: 'Erro de Inicialização',
+        message: 'Erro ao carregar configurações salvas.',
+        duration: 5000
+      })
+    }
+    
     return () => {
       if (monitoringRef.current) {
         clearInterval(monitoringRef.current)
@@ -62,27 +74,54 @@ const CoreplanIntegration = () => {
   }, [])
 
   const loadSavedCredentials = () => {
-    const saved = localStorage.getItem('coreplan-credentials')
-    if (saved) {
-      const parsed = JSON.parse(saved)
-      setCredentials(parsed)
-      if (parsed.username && parsed.password) {
-        testConnection()
+    try {
+      const saved = localStorage.getItem('coreplan-credentials')
+      if (saved) {
+        const parsed = JSON.parse(saved)
+        setCredentials(parsed)
+        if (parsed.username && parsed.password) {
+          // Não testar conexão automaticamente para evitar erros na inicialização
+          // O usuário pode testar manualmente
+        }
       }
+    } catch (error) {
+      console.error('Erro ao carregar credenciais salvas:', error)
+      // Limpar credenciais corrompidas
+      localStorage.removeItem('coreplan-credentials')
     }
   }
 
   const saveCredentials = () => {
-    localStorage.setItem('coreplan-credentials', JSON.stringify(credentials))
-    addNotification({
-      type: 'success',
-      title: 'Credenciais Salvas',
-      message: 'As credenciais foram salvas com sucesso.',
-      duration: 3000
-    })
+    try {
+      localStorage.setItem('coreplan-credentials', JSON.stringify(credentials))
+      addNotification({
+        type: 'success',
+        title: 'Credenciais Salvas',
+        message: 'As credenciais foram salvas com sucesso.',
+        duration: 3000
+      })
+    } catch (error) {
+      console.error('Erro ao salvar credenciais:', error)
+      addNotification({
+        type: 'error',
+        title: 'Erro ao Salvar',
+        message: 'Não foi possível salvar as credenciais.',
+        duration: 5000
+      })
+    }
   }
 
   const testConnection = async () => {
+    if (!credentials.username || !credentials.password || !credentials.baseUrl) {
+      addNotification({
+        type: 'warning',
+        title: 'Credenciais Incompletas',
+        message: 'Preencha todas as credenciais antes de testar a conexão.',
+        duration: 4000
+      })
+      return
+    }
+
     setIsLoading(true)
     setConnectionStatus('testing')
     
@@ -117,12 +156,13 @@ const CoreplanIntegration = () => {
         })
       }
     } catch (error) {
+      console.error('Erro no teste de conexão:', error)
       setIsConnected(false)
       setConnectionStatus('error')
       addNotification({
         type: 'error',
         title: 'Erro de Conexão',
-        message: 'Não foi possível conectar ao sistema GLPI.',
+        message: `Não foi possível conectar ao sistema GLPI: ${error.message}`,
         duration: 5000
       })
     } finally {
@@ -141,22 +181,42 @@ const CoreplanIntegration = () => {
       return
     }
 
-    setIsMonitoring(true)
-    
-    // Primeira sincronização imediata
-    await syncTickets()
-    
-    // Configurar monitoramento contínuo
-    monitoringRef.current = setInterval(async () => {
+    try {
+      setIsMonitoring(true)
+      
+      // Primeira sincronização imediata
       await syncTickets()
-    }, syncInterval)
-    
-    addNotification({
-      type: 'success',
-      title: 'Monitoramento Iniciado',
-      message: `Sincronizando tickets a cada ${syncInterval / 60000} minutos.`,
-      duration: 4000
-    })
+      
+      // Configurar monitoramento contínuo
+      monitoringRef.current = setInterval(async () => {
+        try {
+          await syncTickets()
+        } catch (error) {
+          console.error('Erro no monitoramento automático:', error)
+          addNotification({
+            type: 'error',
+            title: 'Erro no Monitoramento',
+            message: 'Erro durante sincronização automática.',
+            duration: 5000
+          })
+        }
+      }, syncInterval)
+      
+      addNotification({
+        type: 'success',
+        title: 'Monitoramento Iniciado',
+        message: `Sincronizando tickets a cada ${syncInterval / 60000} minutos.`,
+        duration: 4000
+      })
+    } catch (error) {
+      setIsMonitoring(false)
+      addNotification({
+        type: 'error',
+        title: 'Erro ao Iniciar Monitoramento',
+        message: 'Não foi possível iniciar o monitoramento automático.',
+        duration: 5000
+      })
+    }
   }
 
   const stopMonitoring = () => {
@@ -175,52 +235,74 @@ const CoreplanIntegration = () => {
   }
 
   const syncTickets = async () => {
-    if (!isConnected || !glpiService) return
+    if (!isConnected || !glpiService) {
+      addNotification({
+        type: 'warning',
+        title: 'Conexão Necessária',
+        message: 'É necessário estar conectado para sincronizar tickets.',
+        duration: 4000
+      })
+      return
+    }
 
     setIsLoading(true)
     
     try {
       // Buscar tickets do GLPI
       const tickets = await glpiService.getTickets()
-      const newTicketsFound = tickets.filter(ticket => 
-        !syncHistory.some(history => history.ticketId === ticket.id)
-      )
       
-      if (tickets.length > 0) {
-        setNewTickets(prev => [...tickets.slice(0, 10), ...prev].slice(0, 10))
+      if (tickets && Array.isArray(tickets)) {
+        const newTicketsFound = tickets.filter(ticket => 
+          !syncHistory.some(history => history.ticketId === ticket.id)
+        )
         
-        // Adicionar ao histórico de sincronização
-        const syncRecord = {
-          id: Date.now(),
-          timestamp: new Date().toISOString(),
-          ticketsFound: tickets.length,
-          newTickets: newTicketsFound.length,
-          status: 'success'
+        if (tickets.length > 0) {
+          setNewTickets(prev => [...tickets.slice(0, 10), ...prev].slice(0, 10))
+          
+          // Adicionar ao histórico de sincronização
+          const syncRecord = {
+            id: Date.now(),
+            timestamp: new Date().toISOString(),
+            ticketsFound: tickets.length,
+            newTickets: newTicketsFound.length,
+            status: 'success'
+          }
+          
+          setSyncHistory(prev => [syncRecord, ...prev].slice(0, 20))
+          
+          // Atualizar estatísticas
+          setSyncStats(prev => ({
+            ...prev,
+            totalTickets: prev.totalTickets + tickets.length,
+            newTickets: prev.newTickets + newTicketsFound.length
+          }))
+          
+          // Notificar sobre novos tickets
+          newTicketsFound.forEach(ticket => {
+            addNotification({
+              type: 'info',
+              title: 'Novo Ticket Recebido',
+              message: `Ticket #${ticket.id} - ${ticket.title}`,
+              duration: 6000
+            })
+          })
         }
         
-        setSyncHistory(prev => [syncRecord, ...prev].slice(0, 20))
+        setLastSync(new Date().toISOString())
         
-        // Atualizar estatísticas
-        setSyncStats(prev => ({
-          ...prev,
-          totalTickets: prev.totalTickets + tickets.length,
-          newTickets: prev.newTickets + newTicketsFound.length
-        }))
-        
-        // Notificar sobre novos tickets
-        newTicketsFound.forEach(ticket => {
-          addNotification({
-            type: 'info',
-            title: 'Novo Ticket Recebido',
-            message: `Ticket #${ticket.id} - ${ticket.title}`,
-            duration: 6000
-          })
+        addNotification({
+          type: 'success',
+          title: 'Sincronização Concluída',
+          message: `${tickets.length} tickets sincronizados com sucesso.`,
+          duration: 3000
         })
+      } else {
+        throw new Error('Resposta inválida do servidor GLPI')
       }
       
-      setLastSync(new Date().toISOString())
-      
     } catch (error) {
+      console.error('Erro na sincronização:', error)
+      
       const syncRecord = {
         id: Date.now(),
         timestamp: new Date().toISOString(),
@@ -236,7 +318,7 @@ const CoreplanIntegration = () => {
       addNotification({
         type: 'error',
         title: 'Erro na Sincronização',
-        message: 'Erro ao sincronizar tickets do GLPI.',
+        message: `Erro ao sincronizar tickets: ${error.message}`,
         duration: 5000
       })
     } finally {
@@ -259,6 +341,17 @@ const CoreplanIntegration = () => {
 
     try {
       const tickets = await glpiService.getTickets()
+      
+      if (!tickets || tickets.length === 0) {
+        addNotification({
+          type: 'warning',
+          title: 'Nenhum Ticket',
+          message: 'Não há tickets para exportar.',
+          duration: 3000
+        })
+        return
+      }
+      
       const csvContent = await glpiService.exportTicketsToCSV(tickets)
       
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
@@ -272,35 +365,46 @@ const CoreplanIntegration = () => {
       addNotification({
         type: 'success',
         title: 'Exportação Concluída',
-        message: 'Tickets exportados em CSV com sucesso.',
+        message: `${tickets.length} tickets exportados em CSV com sucesso.`,
         duration: 3000
       })
     } catch (error) {
+      console.error('Erro na exportação:', error)
       addNotification({
         type: 'error',
         title: 'Erro na Exportação',
-        message: 'Erro ao exportar tickets.',
-        duration: 3000
+        message: `Erro ao exportar tickets: ${error.message}`,
+        duration: 5000
       })
     }
   }
 
   const clearHistory = () => {
-    setSyncHistory([])
-    setNewTickets([])
-    setSyncStats({
-      totalTickets: 0,
-      newTickets: 0,
-      updatedTickets: 0,
-      errors: 0
-    })
-    
-    addNotification({
-      type: 'info',
-      title: 'Histórico Limpo',
-      message: 'Histórico de sincronização foi limpo.',
-      duration: 3000
-    })
+    try {
+      setSyncHistory([])
+      setNewTickets([])
+      setSyncStats({
+        totalTickets: 0,
+        newTickets: 0,
+        updatedTickets: 0,
+        errors: 0
+      })
+      
+      addNotification({
+        type: 'info',
+        title: 'Histórico Limpo',
+        message: 'Histórico de sincronização foi limpo.',
+        duration: 3000
+      })
+    } catch (error) {
+      console.error('Erro ao limpar histórico:', error)
+      addNotification({
+        type: 'error',
+        title: 'Erro ao Limpar',
+        message: 'Não foi possível limpar o histórico.',
+        duration: 5000
+      })
+    }
   }
 
   const getStatusColor = (status) => {
@@ -327,6 +431,26 @@ const CoreplanIntegration = () => {
       default:
         return 'Desconectado'
     }
+  }
+
+  // Tratamento de erro global para evitar página em branco
+  if (!credentials) {
+    return (
+      <div className="space-y-6">
+        <div className="dashboard-card">
+          <div className="text-center">
+            <h2 className="text-2xl font-bold text-white mb-4">Erro de Carregamento</h2>
+            <p className="text-gray-400 mb-4">Ocorreu um erro ao carregar o componente de integração.</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="btn-primary"
+            >
+              Recarregar Página
+            </button>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
