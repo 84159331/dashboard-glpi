@@ -1,8 +1,8 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { ChevronLeft, ChevronRight, Search, Filter, Clock, AlertTriangle, Eye } from 'lucide-react'
 import TicketDetails from './TicketDetails'
 
-const TicketTable = ({ data }) => {
+const TicketTable = ({ data, filterOpenOnly = false }) => {
   const [currentPage, setCurrentPage] = useState(1)
   const [searchTerm, setSearchTerm] = useState('')
   const [sortColumn, setSortColumn] = useState(null)
@@ -13,13 +13,20 @@ const TicketTable = ({ data }) => {
   const [isDetailsOpen, setIsDetailsOpen] = useState(false)
   const itemsPerPage = 15
 
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [filterOpenOnly])
+
   // Filtrar dados
   const filteredData = data.filter(ticket => {
     const matchesSearch = Object.values(ticket).some(value =>
       String(value).toLowerCase().includes(searchTerm.toLowerCase())
     )
     
-    const matchesStatus = statusFilter === 'all' || ticket.Status === statusFilter
+    const isOpen = ticket.Status !== 'Solucionado' && ticket.Status !== 'Fechado'
+    const matchesStatus = filterOpenOnly
+      ? isOpen
+      : (statusFilter === 'all' || ticket.Status === statusFilter)
     const matchesPriority = priorityFilter === 'all' || ticket.Prioridade === priorityFilter
     
     return matchesSearch && matchesStatus && matchesPriority

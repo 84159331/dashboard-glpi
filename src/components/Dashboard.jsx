@@ -9,6 +9,7 @@ import EvaluationSummary from './EvaluationSummary'
 const Dashboard = ({ data, columns, onReset }) => {
   const [chartType, setChartType] = useState('status')
   const [viewMode, setViewMode] = useState('stats') // stats, charts, table, category, evaluations
+  const [showOnlyOpen, setShowOnlyOpen] = useState(false)
 
   const handleExportCSV = () => {
     const csvContent = [
@@ -30,11 +31,11 @@ const Dashboard = ({ data, columns, onReset }) => {
   const renderContent = () => {
     switch (viewMode) {
       case 'stats':
-        return <TicketStats data={data} />
+        return <TicketStats data={data} onClickOpenTickets={() => { setViewMode('table'); setShowOnlyOpen(true) }} />
       case 'charts':
         return <TicketCharts data={data} chartType={chartType} />
       case 'table':
-        return <TicketTable data={data} />
+        return <TicketTable data={data} filterOpenOnly={showOnlyOpen} />
       case 'category':
         return <CategoryAnalysis data={data} />
       case 'evaluations':

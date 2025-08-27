@@ -12,7 +12,7 @@ import {
   Hourglass
 } from 'lucide-react'
 
-const TicketStats = ({ data }) => {
+const TicketStats = ({ data, onClickOpenTickets }) => {
   const stats = useMemo(() => {
     if (!data || data.length === 0) return {}
 
@@ -129,7 +129,10 @@ const TicketStats = ({ data }) => {
         {cards.map((card, index) => {
           const IconComponent = card.icon
           return (
-            <div key={index} className="bg-gray-800 rounded-lg p-6 border border-gray-700">
+            <div
+              key={index}
+              className="bg-gray-800 rounded-lg p-6 border border-gray-700"
+            >
               <div className="flex items-center justify-between mb-4">
                 <div className={`p-3 rounded-full ${card.color}`}>
                   <IconComponent className="h-6 w-6 text-white" />
@@ -138,7 +141,17 @@ const TicketStats = ({ data }) => {
               <div>
                 <p className="text-sm font-medium text-gray-400 mb-1">{card.title}</p>
                 <p className="text-3xl font-bold text-white">{card.value}</p>
-                <p className="text-xs text-gray-500 mt-1">{card.description}</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  {card.description}
+                  {index === 0 && (
+                    <button
+                      onClick={onClickOpenTickets}
+                      className="ml-2 text-blue-400 hover:text-blue-300 underline underline-offset-2"
+                    >
+                      Ver chamados
+                    </button>
+                  )}
+                </p>
               </div>
             </div>
           )
