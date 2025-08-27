@@ -65,7 +65,7 @@ const Header = ({ onHomeClick, onViewChange, currentView }) => {
                   currentView === 'integration' ? 'text-blue-400' : 'text-white hover:text-blue-400'
                 }`}
               >
-                Integração Coreplan
+                Integração GLPI
               </button>
             </div>
           </div>
