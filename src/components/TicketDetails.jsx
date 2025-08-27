@@ -4,6 +4,9 @@ import { X, ThumbsUp, ThumbsDown, Clock, User, Tag, MessageSquare, Star } from '
 const TicketDetails = ({ ticket, isOpen, onClose, onEvaluate }) => {
   const [evaluation, setEvaluation] = useState(null)
   const [comment, setComment] = useState('')
+  const [starRating, setStarRating] = useState(0)
+  const [starHover, setStarHover] = useState(null)
+  const [starComment, setStarComment] = useState('')
 
   if (!isOpen || !ticket) return null
 
@@ -18,6 +21,24 @@ const TicketDetails = ({ ticket, isOpen, onClose, onEvaluate }) => {
       setComment('')
       onClose()
     }
+  }
+
+  const handleSubmitStarReview = () => {
+    // Salva avaliação por estrelas no localStorage (lista cumulativa)
+    const existing = JSON.parse(localStorage.getItem('starEvaluations') || '[]')
+    const newReview = {
+      id: Date.now(),
+      ticketId: ticket.ID,
+      stars: starRating,
+      comment: starComment.trim(),
+      date: new Date().toISOString()
+    }
+    const updated = [newReview, ...existing]
+    localStorage.setItem('starEvaluations', JSON.stringify(updated))
+    setStarRating(0)
+    setStarHover(null)
+    setStarComment('')
+    onClose()
   }
 
   const getStatusColor = (status) => {
@@ -202,7 +223,60 @@ const TicketDetails = ({ ticket, isOpen, onClose, onEvaluate }) => {
             </div>
           </div>
 
-          {/* Avaliação */}
+          {/* Avaliação por Estrelas */}
+          <div className="border-t border-gray-200 pt-6">
+            <h4 className="font-semibold text-gray-900 mb-4 flex items-center space-x-2">
+              <Star className="h-5 w-5" />
+              <span>Avaliar por Estrelas (0 = Muito ruim, 5 = Excelente)</span>
+            </h4>
+
+            <div className="space-y-4">
+              <div className="flex items-center space-x-2">
+                {Array.from({ length: 5 }, (_, i) => i + 1).map((value) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onMouseEnter={() => setStarHover(value)}
+                    onMouseLeave={() => setStarHover(null)}
+                    onClick={() => setStarRating(value)}
+                    className="p-1"
+                  >
+                    <Star
+                      className={`h-6 w-6 ${ (starHover ?? starRating) >= value ? 'text-yellow-400' : 'text-gray-300' }`}
+                      fill={(starHover ?? starRating) >= value ? '#FBBF24' : 'none'}
+                    />
+                  </button>
+                ))}
+                <span className="ml-2 text-sm text-gray-600">{starRating} / 5</span>
+                <button
+                  type="button"
+                  onClick={() => setStarRating(0)}
+                  className="ml-3 text-xs text-gray-500 hover:text-gray-700 underline"
+                >
+                  Zerar (0)
+                </button>
+              </div>
+
+              <textarea
+                value={starComment}
+                onChange={(e) => setStarComment(e.target.value)}
+                placeholder="Escreva sua avaliação (opcional)"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                rows="3"
+              />
+
+              <div className="flex items-center space-x-3">
+                <button
+                  onClick={handleSubmitStarReview}
+                  className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+                >
+                  Salvar Avaliação por Estrelas
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Avaliação Positiva/Negativa */}
           <div className="border-t border-gray-200 pt-6">
             <h4 className="font-semibold text-gray-900 mb-4 flex items-center space-x-2">
               <Star className="h-5 w-5" />
