@@ -12,7 +12,7 @@ const TicketTable = ({ data, filterMode = 'none', initialSearchTerm = '' }) => {
   const [priorityFilter, setPriorityFilter] = useState('all')
   const [selectedTicket, setSelectedTicket] = useState(null)
   const [isDetailsOpen, setIsDetailsOpen] = useState(false)
-  const itemsPerPage = 15
+  const itemsPerPage = 50
 
   useEffect(() => {
     setCurrentPage(1)
