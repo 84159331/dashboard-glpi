@@ -1,7 +1,14 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { ArrowLeft, BarChart3, Database, Headphones, Activity } from 'lucide-react'
 
 const Header = ({ onHomeClick }) => {
+  const [now, setNow] = useState(new Date())
+
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 1000)
+    return () => clearInterval(id)
+  }, [])
+
   return (
     <header className="bg-gray-800 shadow-lg border-b border-gray-700">
       <div className="container mx-auto px-4 py-4">
@@ -26,7 +33,7 @@ const Header = ({ onHomeClick }) => {
             </div>
           </div>
           <div className="text-sm text-gray-400">
-            Powered by React + Recharts
+            {now.toLocaleString('pt-BR')}
           </div>
         </div>
       </div>
