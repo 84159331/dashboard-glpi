@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import Papa from 'papaparse'
-import { Upload, FileText, AlertCircle, CheckCircle, Headphones } from 'lucide-react'
+import { Upload, FileText, AlertCircle, CheckCircle, Headphones, Download, Database, Zap } from 'lucide-react'
 
 const CSVUploader = ({ onDataLoaded }) => {
   const [dragActive, setDragActive] = useState(false)
@@ -81,82 +81,173 @@ const CSVUploader = ({ onDataLoaded }) => {
   }
 
   return (
-    <div className="max-w-2xl mx-auto">
-      <div className="text-center mb-8">
-        <h2 className="text-3xl font-bold text-white mb-4">Carregue seu arquivo GLPI</h2>
-        <p className="text-lg text-gray-400">Arraste e solte seu arquivo CSV do GLPI aqui ou clique para selecionar</p>
+    <div className="max-w-4xl mx-auto space-y-8">
+      {/* Header */}
+      <div className="text-center space-y-4">
+        <div className="flex items-center justify-center space-x-3 mb-6">
+          <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-glow">
+            <Database className="h-8 w-8 text-white" />
+          </div>
+        </div>
+        <h2 className="text-4xl font-bold text-gradient">Carregue seu arquivo GLPI</h2>
+        <p className="text-xl text-gray-400 max-w-2xl mx-auto">
+          Arraste e solte seu arquivo CSV do GLPI aqui ou clique para selecionar
+        </p>
       </div>
 
+      {/* Área de Upload */}
       <div
-        className={`relative border-2 border-dashed rounded-lg p-8 text-center transition-colors ${dragActive ? 'border-blue-500 bg-blue-900/20' : 'border-gray-600 hover:border-blue-400'}`}
+        className={`
+          relative border-2 border-dashed rounded-2xl p-12 text-center transition-all duration-300
+          ${dragActive 
+            ? 'border-blue-500 bg-blue-500/10 shadow-glow scale-105' 
+            : 'border-gray-600 hover:border-blue-400 hover:bg-white/5'
+          }
+          ${success ? 'border-green-500 bg-green-500/10' : ''}
+        `}
         onDragEnter={handleDrag}
         onDragLeave={handleDrag}
         onDragOver={handleDrag}
         onDrop={handleDrop}
       >
-        <input type="file" accept=".csv" onChange={handleFileInput} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
-        <div className="space-y-4">
+        <input 
+          type="file" 
+          accept=".csv" 
+          onChange={handleFileInput} 
+          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" 
+        />
+        
+        <div className="space-y-6">
           {loading ? (
-            <div className="flex flex-col items-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-              <p className="text-gray-400 mt-2">Processando arquivo GLPI...</p>
+            <div className="flex flex-col items-center space-y-4">
+              <div className="relative">
+                <div className="w-16 h-16 border-4 border-gray-600/20 border-t-blue-500 rounded-full animate-spin"></div>
+                <div className="absolute inset-2 border-2 border-transparent border-b-purple-500 rounded-full animate-spin" style={{ animationDirection: 'reverse' }}></div>
+              </div>
+              <div className="text-center">
+                <p className="text-lg font-medium text-white">Processando arquivo GLPI...</p>
+                <p className="text-gray-400">Isso pode levar alguns segundos</p>
+              </div>
             </div>
           ) : success ? (
-            <div className="flex flex-col items-center">
-              <CheckCircle className="h-12 w-12 text-green-500" />
-              <p className="text-green-400 font-medium">Arquivo GLPI carregado com sucesso!</p>
+            <div className="flex flex-col items-center space-y-4">
+              <div className="relative">
+                <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center shadow-glow">
+                  <CheckCircle className="h-8 w-8 text-white" />
+                </div>
+                <div className="absolute -top-1 -right-1 w-6 h-6 bg-white rounded-full flex items-center justify-center">
+                  <CheckCircle className="h-4 w-4 text-green-600" />
+                </div>
+              </div>
+              <div className="text-center">
+                <p className="text-xl font-bold text-green-400">Arquivo GLPI carregado com sucesso!</p>
+                <p className="text-gray-400">Redirecionando para o dashboard...</p>
+              </div>
             </div>
           ) : (
             <>
-              <Headphones className="h-12 w-12 text-gray-400 mx-auto" />
-              <div>
-                <p className="text-lg font-medium text-white">Arraste seu arquivo GLPI aqui</p>
-                <p className="text-gray-400">ou clique para selecionar</p>
+              <div className="relative">
+                <div className="w-20 h-20 bg-gradient-to-br from-gray-600 to-gray-700 rounded-2xl flex items-center justify-center mx-auto shadow-soft">
+                  <Headphones className="h-10 w-10 text-gray-300" />
+                </div>
+                <div className="absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center shadow-glow">
+                  <Upload className="h-4 w-4 text-white" />
+                </div>
               </div>
-              <div className="flex items-center justify-center text-sm text-gray-400">
-                <FileText className="h-4 w-4 mr-1" />
-                Apenas arquivos .csv do GLPI são aceitos
+              
+              <div className="space-y-2">
+                <p className="text-2xl font-bold text-white">Arraste seu arquivo GLPI aqui</p>
+                <p className="text-gray-400 text-lg">ou clique para selecionar</p>
+              </div>
+              
+              <div className="flex items-center justify-center space-x-2 text-sm text-gray-500">
+                <FileText className="h-4 w-4" />
+                <span>Apenas arquivos .csv do GLPI são aceitos</span>
               </div>
             </>
           )}
         </div>
       </div>
 
+      {/* Mensagem de erro */}
       {error && (
-        <div className="mt-4 p-4 bg-red-900/20 border border-red-700 rounded-lg">
-          <div className="flex items-center">
-            <AlertCircle className="h-5 w-5 text-red-400 mr-2" />
-            <p className="text-red-300">{error}</p>
+        <div className="animate-bounce-in">
+          <div className="bg-red-500/10 border border-red-400/30 rounded-xl p-6 backdrop-blur-sm">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-red-500/20 rounded-lg flex items-center justify-center">
+                <AlertCircle className="h-5 w-5 text-red-400" />
+              </div>
+              <div>
+                <h4 className="font-semibold text-red-300">Erro no Upload</h4>
+                <p className="text-red-200">{error}</p>
+              </div>
+            </div>
           </div>
         </div>
       )}
 
-      <div className="mt-8 text-center">
-        <h3 className="text-lg font-semibold text-white mb-4">Como exportar do GLPI</h3>
-        <div className="bg-gray-800 p-4 rounded-lg text-sm text-left max-w-md mx-auto border border-gray-700">
-          <div className="space-y-2 text-gray-300">
-            <p><strong>1.</strong> Acesse o GLPI</p>
-            <p><strong>2.</strong> Vá em "Tickets" → "Lista de tickets"</p>
-            <p><strong>3.</strong> Aplique os filtros desejados</p>
-            <p><strong>4.</strong> Clique em "Exportar" → "CSV"</p>
-            <p><strong>5.</strong> Carregue o arquivo aqui</p>
+      {/* Instruções */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Como exportar */}
+        <div className="dashboard-card card-primary">
+          <div className="flex items-center space-x-3 mb-4">
+            <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center">
+              <Download className="h-5 w-5 text-blue-400" />
+            </div>
+            <h3 className="text-lg font-semibold text-white">Como exportar do GLPI</h3>
+          </div>
+          
+          <div className="space-y-3 text-sm text-gray-300">
+            <div className="flex items-center space-x-3">
+              <div className="w-6 h-6 bg-blue-500/20 rounded-full flex items-center justify-center text-xs font-bold text-blue-400">1</div>
+              <span>Acesse o GLPI</span>
+            </div>
+            <div className="flex items-center space-x-3">
+              <div className="w-6 h-6 bg-blue-500/20 rounded-full flex items-center justify-center text-xs font-bold text-blue-400">2</div>
+              <span>Vá em "Tickets" → "Lista de tickets"</span>
+            </div>
+            <div className="flex items-center space-x-3">
+              <div className="w-6 h-6 bg-blue-500/20 rounded-full flex items-center justify-center text-xs font-bold text-blue-400">3</div>
+              <span>Aplique os filtros desejados</span>
+            </div>
+            <div className="flex items-center space-x-3">
+              <div className="w-6 h-6 bg-blue-500/20 rounded-full flex items-center justify-center text-xs font-bold text-blue-400">4</div>
+              <span>Clique em "Exportar" → "CSV"</span>
+            </div>
+            <div className="flex items-center space-x-3">
+              <div className="w-6 h-6 bg-blue-500/20 rounded-full flex items-center justify-center text-xs font-bold text-blue-400">5</div>
+              <span>Carregue o arquivo aqui</span>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div className="mt-6 text-center">
-        <h3 className="text-lg font-semibold text-white mb-4">Campos esperados do GLPI</h3>
-        <div className="bg-blue-900/20 p-4 rounded-lg text-sm text-left max-w-md mx-auto border border-blue-700">
-          <div className="space-y-1 text-gray-300">
-            <p>• ID do ticket</p>
-            <p>• Título</p>
-            <p>• Status</p>
-            <p>• Prioridade</p>
-            <p>• Categoria</p>
-            <p>• Requerente</p>
-            <p>• Técnico responsável</p>
-            <p>• Data de abertura</p>
-            <p>• Tempo de resolução</p>
+        {/* Campos esperados */}
+        <div className="dashboard-card card-accent">
+          <div className="flex items-center space-x-3 mb-4">
+            <div className="w-10 h-10 bg-purple-500/20 rounded-lg flex items-center justify-center">
+              <Zap className="h-5 w-5 text-purple-400" />
+            </div>
+            <h3 className="text-lg font-semibold text-white">Campos esperados do GLPI</h3>
+          </div>
+          
+          <div className="grid grid-cols-1 gap-2 text-sm">
+            {[
+              'ID do ticket',
+              'Título',
+              'Status',
+              'Prioridade',
+              'Categoria',
+              'Requerente',
+              'Técnico responsável',
+              'Data de abertura',
+              'Tempo de resolução',
+              'Solução implementada'
+            ].map((field, index) => (
+              <div key={index} className="flex items-center space-x-2">
+                <div className="w-2 h-2 bg-purple-400 rounded-full"></div>
+                <span className="text-gray-300">{field}</span>
+              </div>
+            ))}
           </div>
         </div>
       </div>
