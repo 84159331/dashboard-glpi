@@ -12,7 +12,7 @@ import {
   Hourglass
 } from 'lucide-react'
 
-const TicketStats = ({ data, onClickOpenTickets }) => {
+const TicketStats = ({ data, onClickOpenTickets, onClickAllTickets, onClickSlaMet, onClickSlaExceeded }) => {
   const stats = useMemo(() => {
     if (!data || data.length === 0) return {}
 
@@ -146,6 +146,30 @@ const TicketStats = ({ data, onClickOpenTickets }) => {
                   {index === 0 && (
                     <button
                       onClick={onClickOpenTickets}
+                      className="ml-2 text-blue-400 hover:text-blue-300 underline underline-offset-2"
+                    >
+                      Ver chamados
+                    </button>
+                  )}
+                  {index === 1 && (
+                    <button
+                      onClick={onClickAllTickets}
+                      className="ml-2 text-blue-400 hover:text-blue-300 underline underline-offset-2"
+                    >
+                      Ver chamados
+                    </button>
+                  )}
+                  {index === 2 && (
+                    <button
+                      onClick={onClickSlaMet}
+                      className="ml-2 text-blue-400 hover:text-blue-300 underline underline-offset-2"
+                    >
+                      Ver chamados
+                    </button>
+                  )}
+                  {index === 3 && (
+                    <button
+                      onClick={onClickSlaExceeded}
                       className="ml-2 text-blue-400 hover:text-blue-300 underline underline-offset-2"
                     >
                       Ver chamados

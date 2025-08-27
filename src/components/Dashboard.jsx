@@ -9,7 +9,7 @@ import EvaluationSummary from './EvaluationSummary'
 const Dashboard = ({ data, columns, onReset }) => {
   const [chartType, setChartType] = useState('status')
   const [viewMode, setViewMode] = useState('stats') // stats, charts, table, category, evaluations
-  const [showOnlyOpen, setShowOnlyOpen] = useState(false)
+  const [tableFilterMode, setTableFilterMode] = useState('none')
 
   const handleExportCSV = () => {
     const csvContent = [
@@ -31,11 +31,19 @@ const Dashboard = ({ data, columns, onReset }) => {
   const renderContent = () => {
     switch (viewMode) {
       case 'stats':
-        return <TicketStats data={data} onClickOpenTickets={() => { setViewMode('table'); setShowOnlyOpen(true) }} />
+        return (
+          <TicketStats
+            data={data}
+            onClickOpenTickets={() => { setViewMode('table'); setTableFilterMode('open') }}
+            onClickAllTickets={() => { setViewMode('table'); setTableFilterMode('all') }}
+            onClickSlaMet={() => { setViewMode('table'); setTableFilterMode('slaMet') }}
+            onClickSlaExceeded={() => { setViewMode('table'); setTableFilterMode('slaExceeded') }}
+          />
+        )
       case 'charts':
         return <TicketCharts data={data} chartType={chartType} />
       case 'table':
-        return <TicketTable data={data} filterOpenOnly={showOnlyOpen} />
+        return <TicketTable data={data} filterMode={tableFilterMode} />
       case 'category':
         return <CategoryAnalysis data={data} />
       case 'evaluations':

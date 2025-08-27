@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react'
 import { ChevronLeft, ChevronRight, Search, Filter, Clock, AlertTriangle, Eye } from 'lucide-react'
 import TicketDetails from './TicketDetails'
 
-const TicketTable = ({ data, filterOpenOnly = false }) => {
+// filterMode: 'none' | 'open' | 'all' | 'slaMet' | 'slaExceeded'
+const TicketTable = ({ data, filterMode = 'none' }) => {
   const [currentPage, setCurrentPage] = useState(1)
   const [searchTerm, setSearchTerm] = useState('')
   const [sortColumn, setSortColumn] = useState(null)
@@ -15,7 +16,7 @@ const TicketTable = ({ data, filterOpenOnly = false }) => {
 
   useEffect(() => {
     setCurrentPage(1)
-  }, [filterOpenOnly])
+  }, [filterMode])
 
   // Filtrar dados
   const filteredData = data.filter(ticket => {
@@ -24,9 +25,23 @@ const TicketTable = ({ data, filterOpenOnly = false }) => {
     )
     
     const isOpen = ticket.Status !== 'Solucionado' && ticket.Status !== 'Fechado'
-    const matchesStatus = filterOpenOnly
-      ? isOpen
-      : (statusFilter === 'all' || ticket.Status === statusFilter)
+    const isSlaExceeded = ticket['Tempo para resolver excedido'] === 'Sim'
+    const matchesByMode = (() => {
+      switch (filterMode) {
+        case 'open':
+          return isOpen
+        case 'all':
+          return true
+        case 'slaMet':
+          return !isSlaExceeded
+        case 'slaExceeded':
+          return isSlaExceeded
+        default:
+          return statusFilter === 'all' || ticket.Status === statusFilter
+      }
+    })()
+
+    const matchesStatus = matchesByMode
     const matchesPriority = priorityFilter === 'all' || ticket.Prioridade === priorityFilter
     
     return matchesSearch && matchesStatus && matchesPriority
