@@ -227,7 +227,7 @@ const TicketDetails = ({ ticket, isOpen, onClose, onEvaluate }) => {
           <div className="border-t border-gray-200 pt-6">
             <h4 className="font-semibold text-gray-900 mb-4 flex items-center space-x-2">
               <Star className="h-5 w-5" />
-              <span>Avaliar por Estrelas (0 = Muito ruim, 5 = Excelente)</span>
+              <span>Responda com o número que melhor representa sua satisfação: 1️⃣ 2️⃣ 3️⃣ 4️⃣ 5️⃣ em uma escala de 1 (muito insatisfeito) 😩 a 5 (muito satisfeito)😁.</span>
             </h4>
 
             <div className="space-y-4">
@@ -261,14 +261,14 @@ const TicketDetails = ({ ticket, isOpen, onClose, onEvaluate }) => {
                 value={starComment}
                 onChange={(e) => setStarComment(e.target.value)}
                 placeholder="Escreva sua avaliação (opcional)"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                className="w-full px -3 py -2 border border-black-400 rounded-lg focus:ring-2 focus:ring-primary -500 focus:border-primary-500"
                 rows="3"
               />
 
               <div className="flex items-center space-x-3">
                 <button
                   onClick={handleSubmitStarReview}
-                  className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+                  className="px-4 py-2 bg-primary-600 text-black rounded-lg hover:bg-primary-700 transition-colors"
                 >
                   Salvar Avaliação por Estrelas
                 </button>
