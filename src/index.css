@@ -317,4 +317,36 @@
   .grid-responsive {
     @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6;
   }
+
+  /* Estilos de impressão */
+  @media print {
+    .no-print {
+      display: none !important;
+    }
+    
+    body {
+      background: white !important;
+      color: black !important;
+    }
+    
+    .bg-gray-800,
+    .bg-gray-900 {
+      background: white !important;
+      color: black !important;
+    }
+    
+    .text-white {
+      color: black !important;
+    }
+    
+    .border-gray-700 {
+      border-color: #e5e7eb !important;
+    }
+    
+    .shadow-soft,
+    .shadow-medium,
+    .shadow-large {
+      box-shadow: none !important;
+    }
+  }
 } 

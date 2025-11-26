@@ -25,22 +25,57 @@ const TicketCharts = ({ data }) => {
 		return prepareTechnicianData(data)
 	}, [data])
 
+	// Paleta de cores moderna e harmoniosa
 	const colors = [
-		'#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6',
-		'#06b6d4', '#84cc16', '#f97316', '#ec4899', '#6366f1'
+		'#3b82f6', // Azul primário
+		'#10b981', // Verde sucesso
+		'#f59e0b', // Amarelo/laranja
+		'#8b5cf6', // Roxo
+		'#ef4444', // Vermelho
+		'#06b6d4', // Ciano
+		'#ec4899', // Rosa
+		'#6366f1', // Índigo
+		'#84cc16', // Lima
+		'#f97316'  // Laranja
 	]
+	
+	// Cores para gráficos específicos
+	const statusColors = {
+		'Solucionado': '#10b981',
+		'Fechado': '#6b7280',
+		'Em andamento': '#3b82f6',
+		'Novo': '#f59e0b',
+		'Pendente': '#f97316',
+		'Cancelado': '#ef4444'
+	}
+	
+	const priorityColors = {
+		'Alta': '#ef4444',
+		'Média': '#f59e0b',
+		'Baixa': '#10b981',
+		'Crítica': '#dc2626'
+	}
 
-	// Tooltip personalizado
+	// Tooltip personalizado melhorado
 	const CustomTooltip = ({ active, payload, label }) => {
 		if (active && payload && payload.length) {
 			return (
-				<div className="bg-gray-900 border border-gray-700 rounded-lg p-3 shadow-lg">
-					<p className="text-white font-medium mb-2">{label}</p>
-					{payload.map((entry, index) => (
-						<p key={index} className="text-sm" style={{ color: entry.color }}>
-							{entry.name}: <span className="font-bold">{entry.value}</span>
-						</p>
-					))}
+				<div className="bg-gray-900/95 backdrop-blur-sm border border-gray-700 rounded-lg p-4 shadow-xl">
+					<p className="text-white font-semibold mb-3 text-base border-b border-gray-700 pb-2">{label}</p>
+					<div className="space-y-2">
+						{payload.map((entry, index) => (
+							<div key={index} className="flex items-center justify-between gap-4">
+								<div className="flex items-center gap-2">
+									<div 
+										className="w-3 h-3 rounded-full" 
+										style={{ backgroundColor: entry.color }}
+									></div>
+									<span className="text-sm text-gray-300">{entry.name}:</span>
+								</div>
+								<span className="text-sm font-bold text-white">{entry.value}</span>
+							</div>
+						))}
+					</div>
 				</div>
 			)
 		}
@@ -50,8 +85,12 @@ const TicketCharts = ({ data }) => {
 	return (
 		<div className="space-y-6">
 			{/* Gráfico Principal - Timeline */}
-			<div className="bg-gray-900 rounded-lg p-4 border border-gray-700">
-				<h3 className="text-white font-semibold mb-4">Evolução de Chamados por Mês</h3>
+			<div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-4 md:p-6 border border-gray-700/50 shadow-soft hover:shadow-medium transition-all duration-300">
+				<h3 className="text-white font-bold text-lg md:text-xl mb-2 flex items-center gap-2">
+					<span className="w-1 h-6 bg-gradient-to-b from-blue-500 to-purple-500 rounded-full"></span>
+					Evolução de Chamados por Mês
+				</h3>
+				<p className="text-gray-400 text-sm mb-4">Análise temporal dos chamados abertos e fechados</p>
 				{timelineData.length === 0 ? (
 					<div className="flex items-center justify-center h-64 text-gray-500">Nenhum dado disponível</div>
 				) : (
@@ -70,10 +109,14 @@ const TicketCharts = ({ data }) => {
 			</div>
 
 			{/* Grid de Gráficos Secundários */}
-			<div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+			<div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
 				{/* Status */}
-				<div className="bg-gray-900 rounded-lg p-4 border border-gray-700">
-					<h3 className="text-white font-semibold mb-4">Distribuição por Status</h3>
+				<div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-4 md:p-6 border border-gray-700/50 shadow-soft hover:shadow-medium transition-all duration-300">
+					<h3 className="text-white font-bold text-lg mb-2 flex items-center gap-2">
+						<span className="w-1 h-6 bg-gradient-to-b from-green-500 to-emerald-500 rounded-full"></span>
+						Distribuição por Status
+					</h3>
+					<p className="text-gray-400 text-sm mb-4">Proporção de chamados por status atual</p>
 					{statusData.length === 0 ? (
 						<div className="flex items-center justify-center h-64 text-gray-500">Nenhum dado disponível</div>
 					) : (
@@ -101,8 +144,12 @@ const TicketCharts = ({ data }) => {
 				</div>
 
 				{/* Prioridade */}
-				<div className="bg-gray-900 rounded-lg p-4 border border-gray-700">
-					<h3 className="text-white font-semibold mb-4">Chamados por Prioridade</h3>
+				<div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-4 md:p-6 border border-gray-700/50 shadow-soft hover:shadow-medium transition-all duration-300">
+					<h3 className="text-white font-bold text-lg mb-2 flex items-center gap-2">
+						<span className="w-1 h-6 bg-gradient-to-b from-yellow-500 to-orange-500 rounded-full"></span>
+						Chamados por Prioridade
+					</h3>
+					<p className="text-gray-400 text-sm mb-4">Distribuição dos chamados por nível de prioridade</p>
 					{priorityData.length === 0 ? (
 						<div className="flex items-center justify-center h-64 text-gray-500">Nenhum dado disponível</div>
 					) : (
@@ -120,8 +167,12 @@ const TicketCharts = ({ data }) => {
 			</div>
 
 			{/* Performance por Técnico */}
-			<div className="bg-gray-900 rounded-lg p-4 border border-gray-700">
-				<h3 className="text-white font-semibold mb-4">Performance por Técnico</h3>
+			<div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-4 md:p-6 border border-gray-700/50 shadow-soft hover:shadow-medium transition-all duration-300">
+				<h3 className="text-white font-bold text-lg md:text-xl mb-2 flex items-center gap-2">
+					<span className="w-1 h-6 bg-gradient-to-b from-purple-500 to-pink-500 rounded-full"></span>
+					Performance por Técnico
+				</h3>
+				<p className="text-gray-400 text-sm mb-4">Análise comparativa de resolução por técnico responsável</p>
 				{technicianData.length === 0 ? (
 					<div className="flex items-center justify-center h-64 text-gray-500">Nenhum dado disponível</div>
 				) : (

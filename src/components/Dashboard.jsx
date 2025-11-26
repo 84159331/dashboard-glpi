@@ -5,6 +5,7 @@ import TicketCharts from './TicketCharts'
 import TicketStats from './TicketStats'
 import CategoryAnalysis from './CategoryAnalysis'
 import EvaluationSummary from './EvaluationSummary'
+import Breadcrumbs from './Breadcrumbs'
 
 const Dashboard = ({ data, columns, onReset }) => {
   const [chartType, setChartType] = useState('status')
@@ -62,30 +63,50 @@ const Dashboard = ({ data, columns, onReset }) => {
     }
   }
 
+  const breadcrumbItems = useMemo(() => {
+    const items = [
+      { label: 'Dashboard', onClick: () => setViewMode('stats') }
+    ]
+    
+    if (viewMode === 'charts') items.push({ label: 'Gráficos' })
+    if (viewMode === 'table') items.push({ label: 'Tabela de Chamados' })
+    if (viewMode === 'category') items.push({ label: 'Análise por Categoria' })
+    if (viewMode === 'evaluations') items.push({ label: 'Avaliações' })
+    
+    return items
+  }, [viewMode])
+
   return (
     <div className="space-y-6">
+      {/* Breadcrumbs */}
+      <Breadcrumbs items={breadcrumbItems} />
+      
       {/* Header do Dashboard */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-white">Dashboard de Chamados TI</h2>
-          <p className="text-gray-400">
-            {data.length} chamados carregados • {columns.length} campos
+          <h2 className="text-2xl md:text-3xl font-bold text-white mb-1">Dashboard de Chamados TI</h2>
+          <p className="text-sm md:text-base text-gray-400">
+            {data.length.toLocaleString('pt-BR')} chamados carregados • {columns.length} campos disponíveis
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 md:gap-3 flex-wrap">
           <button
             onClick={handleExportCSV}
-            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+            className="flex items-center gap-2 px-3 md:px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all duration-300 hover:scale-105 active:scale-95 shadow-soft hover:shadow-medium text-sm md:text-base"
+            title="Exportar dados para CSV"
           >
             <Download className="h-4 w-4" />
-            Exportar CSV
+            <span className="hidden sm:inline">Exportar CSV</span>
+            <span className="sm:hidden">Exportar</span>
           </button>
           <button
             onClick={onReset}
-            className="flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+            className="flex items-center gap-2 px-3 md:px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-all duration-300 hover:scale-105 active:scale-95 shadow-soft hover:shadow-medium text-sm md:text-base"
+            title="Carregar novo arquivo"
           >
             <RotateCcw className="h-4 w-4" />
-            Novo Arquivo
+            <span className="hidden sm:inline">Novo Arquivo</span>
+            <span className="sm:hidden">Novo</span>
           </button>
         </div>
       </div>
@@ -100,37 +121,39 @@ const Dashboard = ({ data, columns, onReset }) => {
             </h3>
             
             <div className="space-y-4">
-              <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 md:gap-3">
                 <button
                   onClick={() => setViewMode('stats')}
-                  className={`flex items-center gap-2 px-4 py-3 rounded-lg border transition-colors ${
+                  className={`flex items-center justify-center gap-2 px-3 md:px-4 py-2.5 md:py-3 rounded-lg border transition-all duration-300 text-sm md:text-base ${
                     viewMode === 'stats'
-                      ? 'bg-blue-600 text-white border-blue-600'
-                      : 'bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600'
+                      ? 'bg-blue-600 text-white border-blue-600 shadow-glow scale-105'
+                      : 'bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600 hover:scale-105 active:scale-95'
                   }`}
                 >
                   <BarChart3 className="h-4 w-4" />
-                  <span>Estatísticas</span>
+                  <span className="hidden sm:inline">Estatísticas</span>
+                  <span className="sm:hidden">Stats</span>
                 </button>
                 
                 <button
                   onClick={() => setViewMode('charts')}
-                  className={`flex items-center gap-2 px-4 py-3 rounded-lg border transition-colors ${
+                  className={`flex items-center justify-center gap-2 px-3 md:px-4 py-2.5 md:py-3 rounded-lg border transition-all duration-300 text-sm md:text-base ${
                     viewMode === 'charts'
-                      ? 'bg-blue-600 text-white border-blue-600'
-                      : 'bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600'
+                      ? 'bg-blue-600 text-white border-blue-600 shadow-glow scale-105'
+                      : 'bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600 hover:scale-105 active:scale-95'
                   }`}
                 >
                   <PieChart className="h-4 w-4" />
-                  <span>Gráficos</span>
+                  <span className="hidden sm:inline">Gráficos</span>
+                  <span className="sm:hidden">Gráf.</span>
                 </button>
                 
                 <button
                   onClick={() => setViewMode('table')}
-                  className={`flex items-center gap-2 px-4 py-3 rounded-lg border transition-colors ${
+                  className={`flex items-center justify-center gap-2 px-3 md:px-4 py-2.5 md:py-3 rounded-lg border transition-all duration-300 text-sm md:text-base ${
                     viewMode === 'table'
-                      ? 'bg-blue-600 text-white border-blue-600'
-                      : 'bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600'
+                      ? 'bg-blue-600 text-white border-blue-600 shadow-glow scale-105'
+                      : 'bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600 hover:scale-105 active:scale-95'
                   }`}
                 >
                   <Table className="h-4 w-4" />
@@ -139,26 +162,28 @@ const Dashboard = ({ data, columns, onReset }) => {
                 
                 <button
                   onClick={() => setViewMode('category')}
-                  className={`flex items-center gap-2 px-4 py-3 rounded-lg border transition-colors ${
+                  className={`flex items-center justify-center gap-2 px-3 md:px-4 py-2.5 md:py-3 rounded-lg border transition-all duration-300 text-sm md:text-base ${
                     viewMode === 'category'
-                      ? 'bg-blue-600 text-white border-blue-600'
-                      : 'bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600'
+                      ? 'bg-blue-600 text-white border-blue-600 shadow-glow scale-105'
+                      : 'bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600 hover:scale-105 active:scale-95'
                   }`}
                 >
                   <FolderOpen className="h-4 w-4" />
-                  <span>Por Categoria</span>
+                  <span className="hidden lg:inline">Por Categoria</span>
+                  <span className="lg:hidden">Categoria</span>
                 </button>
                 
                 <button
                   onClick={() => setViewMode('evaluations')}
-                  className={`flex items-center gap-2 px-4 py-3 rounded-lg border transition-colors ${
+                  className={`flex items-center justify-center gap-2 px-3 md:px-4 py-2.5 md:py-3 rounded-lg border transition-all duration-300 text-sm md:text-base ${
                     viewMode === 'evaluations'
-                      ? 'bg-blue-600 text-white border-blue-600'
-                      : 'bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600'
+                      ? 'bg-blue-600 text-white border-blue-600 shadow-glow scale-105'
+                      : 'bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600 hover:scale-105 active:scale-95'
                   }`}
                 >
                   <Star className="h-4 w-4" />
-                  <span>Avaliações</span>
+                  <span className="hidden sm:inline">Avaliações</span>
+                  <span className="sm:hidden">Aval.</span>
                 </button>
               </div>
 

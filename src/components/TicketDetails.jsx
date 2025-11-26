@@ -1,5 +1,5 @@
-import React, { useState } from 'react'
-import { X, ThumbsUp, ThumbsDown, Clock, User, Tag, MessageSquare, Star } from 'lucide-react'
+import React, { useState, useMemo } from 'react'
+import { X, ThumbsUp, ThumbsDown, Clock, User, Tag, MessageSquare, Star, AlertTriangle, TrendingUp, TrendingDown, Target, Timer, CheckCircle2, XCircle } from 'lucide-react'
 
 const TicketDetails = ({ ticket, isOpen, onClose, onEvaluate }) => {
   const [evaluation, setEvaluation] = useState(null)
@@ -87,6 +87,95 @@ const TicketDetails = ({ ticket, isOpen, onClose, onEvaluate }) => {
       return `${hours}h ${minutes}min`
     }
   }
+
+  // Função para converter tempo em minutos
+  const parseTimeToMinutes = (timeStr) => {
+    if (!timeStr) return 0
+    
+    const hoursMatch = timeStr.match(/(\d+)\s*hora/)
+    const minutesMatch = timeStr.match(/(\d+)\s*minuto/)
+    const secondsMatch = timeStr.match(/(\d+)\s*segundo/)
+    
+    let totalMinutes = 0
+    if (hoursMatch) totalMinutes += parseInt(hoursMatch[1]) * 60
+    if (minutesMatch) totalMinutes += parseInt(minutesMatch[1])
+    if (secondsMatch) totalMinutes += parseInt(secondsMatch[1]) / 60
+    
+    return totalMinutes
+  }
+
+  // Função para converter SLA definido em minutos
+  const parseSLAToMinutes = (slaStr) => {
+    if (!slaStr) return 0
+    
+    // Tenta diferentes formatos: "8 horas", "8h", "480 minutos", etc.
+    const hoursMatch = slaStr.match(/(\d+)\s*h/i)
+    const minutesMatch = slaStr.match(/(\d+)\s*min/i)
+    const daysMatch = slaStr.match(/(\d+)\s*d/i)
+    
+    let totalMinutes = 0
+    if (daysMatch) totalMinutes += parseInt(daysMatch[1]) * 24 * 60
+    if (hoursMatch) totalMinutes += parseInt(hoursMatch[1]) * 60
+    if (minutesMatch) totalMinutes += parseInt(minutesMatch[1])
+    
+    return totalMinutes
+  }
+
+  // Cálculos detalhados de SLA
+  const slaDetails = useMemo(() => {
+    const slaDefined = ticket['SLA - SLA Tempo para solução'] || ''
+    const timeToResolve = ticket['Tempo para solução'] || ''
+    const isExceeded = ticket['Tempo para resolver excedido'] === 'Sim'
+    const waitTime = ticket['Estatísticas - Tempo de espera'] || ''
+    const assignmentTime = ticket['Estatísticas - Tempo de atribuição'] || ''
+    const resolutionTime = ticket['Estatísticas - Tempo de solução'] || ''
+    
+    const slaMinutes = parseSLAToMinutes(slaDefined)
+    const usedMinutes = parseTimeToMinutes(timeToResolve)
+    const waitMinutes = parseTimeToMinutes(waitTime)
+    const assignmentMinutes = parseTimeToMinutes(assignmentTime)
+    const resolutionMinutes = parseTimeToMinutes(resolutionTime)
+    
+    const percentageUsed = slaMinutes > 0 ? Math.min((usedMinutes / slaMinutes) * 100, 100) : 0
+    const remainingMinutes = Math.max(0, slaMinutes - usedMinutes)
+    const exceededMinutes = isExceeded ? Math.max(0, usedMinutes - slaMinutes) : 0
+    
+    // Determinar status visual
+    let statusColor = 'green'
+    let statusText = 'No Prazo'
+    let statusIcon = CheckCircle2
+    
+    if (isExceeded) {
+      statusColor = 'red'
+      statusText = 'SLA Excedido'
+      statusIcon = XCircle
+    } else if (percentageUsed >= 90) {
+      statusColor = 'orange'
+      statusText = 'Crítico'
+      statusIcon = AlertTriangle
+    } else if (percentageUsed >= 75) {
+      statusColor = 'yellow'
+      statusText = 'Atenção'
+      statusIcon = AlertTriangle
+    }
+    
+    return {
+      slaDefined,
+      timeToResolve,
+      isExceeded,
+      slaMinutes,
+      usedMinutes,
+      waitMinutes,
+      assignmentMinutes,
+      resolutionMinutes,
+      percentageUsed: Math.round(percentageUsed),
+      remainingMinutes,
+      exceededMinutes,
+      statusColor,
+      statusText,
+      statusIcon
+    }
+  }, [ticket])
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -204,22 +293,232 @@ const TicketDetails = ({ ticket, isOpen, onClose, onEvaluate }) => {
             </div>
           )}
 
-          {/* SLA */}
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <h4 className="font-semibold text-gray-900 mb-3">Informações de SLA</h4>
-            <div className="space-y-2">
-              <p className="text-sm text-gray-600">
-                <strong>SLA Definido:</strong> {ticket['SLA - SLA Tempo para solução']}
-              </p>
-              <p className="text-sm text-gray-600">
-                <strong>Tempo para Solução:</strong> {formatTime(ticket['Tempo para solução'])}
-              </p>
-              <p className="text-sm text-gray-600">
-                <strong>SLA Excedido:</strong> 
-                <span className={ticket['Tempo para resolver excedido'] === 'Sim' ? 'text-red-600 font-semibold' : 'text-green-600 font-semibold'}>
-                  {ticket['Tempo para resolver excedido'] === 'Sim' ? ' Sim' : ' Não'}
+          {/* SLA Detalhado */}
+          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-6 rounded-lg border-2 border-blue-200">
+            <div className="flex items-center justify-between mb-4">
+              <h4 className="text-lg font-bold text-gray-900 flex items-center space-x-2">
+                <Target className="h-5 w-5 text-blue-600" />
+                <span>Análise Detalhada de SLA</span>
+              </h4>
+              <div className={`flex items-center space-x-2 px-3 py-1 rounded-full ${
+                slaDetails.statusColor === 'green' ? 'bg-green-100 text-green-800' :
+                slaDetails.statusColor === 'yellow' ? 'bg-yellow-100 text-yellow-800' :
+                slaDetails.statusColor === 'orange' ? 'bg-orange-100 text-orange-800' :
+                'bg-red-100 text-red-800'
+              }`}>
+                {React.createElement(slaDetails.statusIcon, { className: 'h-4 w-4' })}
+                <span className="text-sm font-semibold">{slaDetails.statusText}</span>
+              </div>
+            </div>
+
+            {/* Barra de Progresso Visual */}
+            <div className="mb-6">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium text-gray-700">Utilização do SLA</span>
+                <span className={`text-sm font-bold ${
+                  slaDetails.percentageUsed >= 90 ? 'text-red-600' :
+                  slaDetails.percentageUsed >= 75 ? 'text-orange-600' :
+                  'text-green-600'
+                }`}>
+                  {slaDetails.percentageUsed}%
                 </span>
-              </p>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
+                <div 
+                  className={`h-full transition-all duration-500 ${
+                    slaDetails.percentageUsed >= 90 ? 'bg-red-500' :
+                    slaDetails.percentageUsed >= 75 ? 'bg-orange-500' :
+                    slaDetails.percentageUsed >= 50 ? 'bg-yellow-500' :
+                    'bg-green-500'
+                  }`}
+                  style={{ width: `${Math.min(slaDetails.percentageUsed, 100)}%` }}
+                />
+              </div>
+            </div>
+
+            {/* Grid de Métricas Principais */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+              <div className="bg-white p-4 rounded-lg border border-blue-200 shadow-sm">
+                <div className="flex items-center space-x-2 mb-2">
+                  <Timer className="h-4 w-4 text-blue-600" />
+                  <span className="text-xs font-medium text-gray-600">SLA Definido</span>
+                </div>
+                <p className="text-lg font-bold text-gray-900">{slaDetails.slaDefined || 'N/A'}</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  {slaDetails.slaMinutes > 0 ? `(${Math.round(slaDetails.slaMinutes)} minutos)` : ''}
+                </p>
+              </div>
+
+              <div className="bg-white p-4 rounded-lg border border-blue-200 shadow-sm">
+                <div className="flex items-center space-x-2 mb-2">
+                  <Clock className="h-4 w-4 text-purple-600" />
+                  <span className="text-xs font-medium text-gray-600">Tempo Utilizado</span>
+                </div>
+                <p className="text-lg font-bold text-gray-900">{formatTime(ticket['Tempo para solução'])}</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  {slaDetails.usedMinutes > 0 ? `(${Math.round(slaDetails.usedMinutes)} minutos)` : ''}
+                </p>
+              </div>
+
+              {!slaDetails.isExceeded ? (
+                <div className="bg-white p-4 rounded-lg border border-green-200 shadow-sm">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <TrendingDown className="h-4 w-4 text-green-600" />
+                    <span className="text-xs font-medium text-gray-600">Tempo Restante</span>
+                  </div>
+                  <p className="text-lg font-bold text-green-700">
+                    {slaDetails.remainingMinutes >= 60 
+                      ? `${Math.floor(slaDetails.remainingMinutes / 60)}h ${Math.round(slaDetails.remainingMinutes % 60)}min`
+                      : `${Math.round(slaDetails.remainingMinutes)} min`
+                    }
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {slaDetails.remainingMinutes > 0 ? 'Disponível' : 'No limite'}
+                  </p>
+                </div>
+              ) : (
+                <div className="bg-white p-4 rounded-lg border border-red-200 shadow-sm">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <TrendingUp className="h-4 w-4 text-red-600" />
+                    <span className="text-xs font-medium text-gray-600">Tempo Excedido</span>
+                  </div>
+                  <p className="text-lg font-bold text-red-700">
+                    {slaDetails.exceededMinutes >= 60 
+                      ? `${Math.floor(slaDetails.exceededMinutes / 60)}h ${Math.round(slaDetails.exceededMinutes % 60)}min`
+                      : `${Math.round(slaDetails.exceededMinutes)} min`
+                    }
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">Acima do prazo</p>
+                </div>
+              )}
+
+              <div className="bg-white p-4 rounded-lg border border-blue-200 shadow-sm">
+                <div className="flex items-center space-x-2 mb-2">
+                  <Target className="h-4 w-4 text-indigo-600" />
+                  <span className="text-xs font-medium text-gray-600">Status</span>
+                </div>
+                <p className={`text-lg font-bold ${
+                  slaDetails.isExceeded ? 'text-red-700' : 'text-green-700'
+                }`}>
+                  {slaDetails.isExceeded ? 'Excedido' : 'No Prazo'}
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  {slaDetails.isExceeded ? 'Ação necessária' : 'Conforme'}
+                </p>
+              </div>
+            </div>
+
+            {/* Breakdown de Tempos por Fase */}
+            <div className="bg-white p-4 rounded-lg border border-blue-200 shadow-sm mb-4">
+              <h5 className="font-semibold text-gray-900 mb-3 flex items-center space-x-2">
+                <Clock className="h-4 w-4 text-blue-600" />
+                <span>Breakdown de Tempos por Fase</span>
+              </h5>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-3 h-3 rounded-full bg-blue-400"></div>
+                    <span className="text-sm text-gray-700">Tempo de Espera</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm font-semibold text-gray-900">
+                      {formatTime(ticket['Estatísticas - Tempo de espera'])}
+                    </span>
+                    {slaDetails.waitMinutes > 0 && slaDetails.slaMinutes > 0 && (
+                      <span className="text-xs text-gray-500">
+                        ({Math.round((slaDetails.waitMinutes / slaDetails.slaMinutes) * 100)}% do SLA)
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-3 h-3 rounded-full bg-green-400"></div>
+                    <span className="text-sm text-gray-700">Tempo de Atribuição</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm font-semibold text-gray-900">
+                      {formatTime(ticket['Estatísticas - Tempo de atribuição'])}
+                    </span>
+                    {slaDetails.assignmentMinutes > 0 && slaDetails.slaMinutes > 0 && (
+                      <span className="text-xs text-gray-500">
+                        ({Math.round((slaDetails.assignmentMinutes / slaDetails.slaMinutes) * 100)}% do SLA)
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-3 h-3 rounded-full bg-purple-400"></div>
+                    <span className="text-sm text-gray-700">Tempo de Solução</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm font-semibold text-gray-900">
+                      {formatTime(ticket['Estatísticas - Tempo de solução'])}
+                    </span>
+                    {slaDetails.resolutionMinutes > 0 && slaDetails.slaMinutes > 0 && (
+                      <span className="text-xs text-gray-500">
+                        ({Math.round((slaDetails.resolutionMinutes / slaDetails.slaMinutes) * 100)}% do SLA)
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Informações Adicionais */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="bg-white p-4 rounded-lg border border-blue-200 shadow-sm">
+                <h5 className="font-semibold text-gray-900 mb-2 text-sm">Informações do SLA</h5>
+                <div className="space-y-1 text-xs">
+                  <p className="text-gray-600">
+                    <strong>Prazo Acordado:</strong> {slaDetails.slaDefined || 'Não definido'}
+                  </p>
+                  <p className="text-gray-600">
+                    <strong>Tempo Total:</strong> {formatTime(ticket['Tempo para solução'])}
+                  </p>
+                  <p className="text-gray-600">
+                    <strong>Data de Abertura:</strong> {ticket['Data de abertura']}
+                  </p>
+                  {ticket['Data da solução'] && (
+                    <p className="text-gray-600">
+                      <strong>Data de Solução:</strong> {ticket['Data da solução']}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className="bg-white p-4 rounded-lg border border-blue-200 shadow-sm">
+                <h5 className="font-semibold text-gray-900 mb-2 text-sm">Análise de Performance</h5>
+                <div className="space-y-1 text-xs">
+                  <p className="text-gray-600">
+                    <strong>Eficiência:</strong> 
+                    <span className={`ml-1 font-semibold ${
+                      slaDetails.percentageUsed <= 50 ? 'text-green-600' :
+                      slaDetails.percentageUsed <= 75 ? 'text-yellow-600' :
+                      'text-red-600'
+                    }`}>
+                      {slaDetails.percentageUsed <= 50 ? 'Excelente' :
+                       slaDetails.percentageUsed <= 75 ? 'Boa' :
+                       slaDetails.percentageUsed <= 90 ? 'Atenção' : 'Crítica'}
+                    </span>
+                  </p>
+                  {slaDetails.isExceeded && (
+                    <p className="text-red-600">
+                      <strong>⚠️ Ação Necessária:</strong> SLA foi excedido em {
+                        slaDetails.exceededMinutes >= 60 
+                          ? `${Math.floor(slaDetails.exceededMinutes / 60)}h ${Math.round(slaDetails.exceededMinutes % 60)}min`
+                          : `${Math.round(slaDetails.exceededMinutes)} min`
+                      }
+                    </p>
+                  )}
+                  {!slaDetails.isExceeded && slaDetails.remainingMinutes > 0 && (
+                    <p className="text-green-600">
+                      <strong>✓ Status:</strong> Chamado dentro do prazo acordado
+                    </p>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
 

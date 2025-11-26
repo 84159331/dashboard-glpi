@@ -81,16 +81,16 @@ const CSVUploader = ({ onDataLoaded }) => {
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
+    <div className="max-w-4xl mx-auto space-y-6 md:space-y-8 px-4">
       {/* Header */}
-      <div className="text-center space-y-4">
-        <div className="flex items-center justify-center space-x-3 mb-6">
-          <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-glow">
-            <Database className="h-8 w-8 text-white" />
+      <div className="text-center space-y-3 md:space-y-4">
+        <div className="flex items-center justify-center space-x-3 mb-4 md:mb-6">
+          <div className="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl md:rounded-2xl flex items-center justify-center shadow-glow">
+            <Database className="h-6 w-6 md:h-8 md:w-8 text-white" />
           </div>
         </div>
-        <h2 className="text-4xl font-bold text-gradient">Carregue seu arquivo GLPI</h2>
-        <p className="text-xl text-gray-400 max-w-2xl mx-auto">
+        <h2 className="text-2xl md:text-4xl font-bold text-gradient">Carregue seu arquivo GLPI</h2>
+        <p className="text-base md:text-xl text-gray-400 max-w-2xl mx-auto px-4">
           Arraste e solte seu arquivo CSV do GLPI aqui ou clique para selecionar
         </p>
       </div>
@@ -98,9 +98,9 @@ const CSVUploader = ({ onDataLoaded }) => {
       {/* Área de Upload */}
       <div
         className={`
-          relative border-2 border-dashed rounded-2xl p-12 text-center transition-all duration-300
+          relative border-2 border-dashed rounded-xl md:rounded-2xl p-6 md:p-12 text-center transition-all duration-300
           ${dragActive 
-            ? 'border-blue-500 bg-blue-500/10 shadow-glow scale-105' 
+            ? 'border-blue-500 bg-blue-500/10 shadow-glow scale-[1.02] md:scale-105' 
             : 'border-gray-600 hover:border-blue-400 hover:bg-white/5'
           }
           ${success ? 'border-green-500 bg-green-500/10' : ''}
@@ -187,7 +187,7 @@ const CSVUploader = ({ onDataLoaded }) => {
       )}
 
       {/* Instruções */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-8">
         {/* Como exportar */}
         <div className="dashboard-card card-primary">
           <div className="flex items-center space-x-3 mb-4">
