@@ -94,6 +94,7 @@ const Header = ({ onHomeClick, onViewChange, currentView }) => {
                 GLPI
               </button>
             </div>
+          </div>
 
           {/* Controles do lado direito */}
           <div className="flex items-center space-x-2 md:space-x-4 w-full md:w-auto justify-end">

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react'
-import { ChevronLeft, ChevronRight, Search, Filter, Clock, AlertTriangle, Eye, Download } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Search, Filter, Clock, AlertTriangle, Eye, Download, User, Tag, Calendar, TrendingUp, Info } from 'lucide-react'
 import TicketDetails from './TicketDetails'
 
 // filterMode: 'none' | 'open' | 'all' | 'slaMet' | 'slaExceeded'
@@ -187,100 +187,194 @@ const TicketTable = ({ data, filterMode = 'none', initialSearchTerm = '' }) => {
   const getStatusColor = (status) => {
     switch (status) {
       case 'Solucionado':
-        return 'bg-green-900/20 text-green-400'
+        return 'bg-green-500/20 text-green-400 border-green-500/30'
       case 'Fechado':
-        return 'bg-gray-700 text-gray-300'
+        return 'bg-gray-500/20 text-gray-300 border-gray-500/30'
       case 'Em andamento':
-        return 'bg-blue-900/20 text-blue-400'
+        return 'bg-blue-500/20 text-blue-400 border-blue-500/30'
       default:
-        return 'bg-yellow-900/20 text-yellow-400'
+        return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30'
     }
   }
 
   const getPriorityColor = (priority) => {
     switch (priority) {
       case 'Alta':
-        return 'bg-red-900/20 text-red-400'
+        return 'bg-red-500/20 text-red-400 border-red-500/30'
       case 'Média':
-        return 'bg-yellow-900/20 text-yellow-400'
+        return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30'
       case 'Baixa':
-        return 'bg-green-900/20 text-green-400'
+        return 'bg-green-500/20 text-green-400 border-green-500/30'
       default:
-        return 'bg-gray-700 text-gray-300'
+        return 'bg-gray-500/20 text-gray-300 border-gray-500/30'
+    }
+  }
+
+  // Função para formatar tempo
+  const formatTime = (timeStr) => {
+    if (!timeStr) return 'N/A'
+    const hoursMatch = timeStr.match(/(\d+)\s*hora/)
+    const minutesMatch = timeStr.match(/(\d+)\s*minuto/)
+    if (hoursMatch && minutesMatch) {
+      return `${hoursMatch[1]}h ${minutesMatch[1]}min`
+    } else if (hoursMatch) {
+      return `${hoursMatch[1]}h`
+    } else if (minutesMatch) {
+      return `${minutesMatch[1]}min`
+    }
+    return timeStr
+  }
+
+  // Função para calcular tempo decorrido
+  const getTimeElapsed = (dateStr) => {
+    if (!dateStr) return null
+    try {
+      const [day, month, year] = dateStr.split(' ')[0].split('/')
+      const date = new Date(Number(year), Number(month) - 1, Number(day))
+      const now = new Date()
+      const diffTime = Math.abs(now - date)
+      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
+      
+      if (diffDays === 0) return 'Hoje'
+      if (diffDays === 1) return 'Ontem'
+      if (diffDays < 7) return `${diffDays} dias`
+      if (diffDays < 30) return `${Math.floor(diffDays / 7)} sem`
+      if (diffDays < 365) return `${Math.floor(diffDays / 30)} meses`
+      return `${Math.floor(diffDays / 365)} anos`
+    } catch {
+      return null
     }
   }
 
   const getSLAStatus = (ticket) => {
     const exceeded = ticket['Tempo para resolver excedido'] === 'Sim'
-    return exceeded ? (
-      <span className="inline-flex items-center gap-1 px-2 py-1 bg-red-900/20 text-red-400 rounded-full text-xs">
-        <AlertTriangle className="h-3 w-3" />
-        SLA Excedido
-      </span>
-    ) : (
-      <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-900/20 text-green-400 rounded-full text-xs">
-        <Clock className="h-3 w-3" />
-        No Prazo
-      </span>
+    const timeToResolve = ticket['Tempo para solução'] || ''
+    
+    return (
+      <div className="flex flex-col gap-1">
+        {exceeded ? (
+          <span className="inline-flex items-center gap-1 px-2 py-1 bg-red-900/30 text-red-400 rounded-full text-xs font-semibold border border-red-500/30">
+            <AlertTriangle className="h-3 w-3" />
+            Excedido
+          </span>
+        ) : (
+          <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-900/30 text-green-400 rounded-full text-xs font-semibold border border-green-500/30">
+            <Clock className="h-3 w-3" />
+            No Prazo
+          </span>
+        )}
+        {timeToResolve && (
+          <span className="text-xs text-gray-500" title={timeToResolve}>
+            {formatTime(timeToResolve)}
+          </span>
+        )}
+      </div>
     )
   }
 
   return (
     <div className="space-y-4">
+      {/* Resumo de Filtros */}
+      <div className="bg-gray-800/50 backdrop-blur-sm rounded-lg p-4 border border-gray-700/50 mb-4">
+        <div className="flex flex-wrap items-center gap-4 text-sm">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+            <span className="text-gray-300">Total:</span>
+            <span className="text-white font-semibold">{sortedData.length.toLocaleString('pt-BR')}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+            <span className="text-gray-300">No Prazo:</span>
+            <span className="text-green-400 font-semibold">
+              {sortedData.filter(t => t['Tempo para resolver excedido'] !== 'Sim').length.toLocaleString('pt-BR')}
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+            <span className="text-gray-300">Excedidos:</span>
+            <span className="text-red-400 font-semibold">
+              {sortedData.filter(t => t['Tempo para resolver excedido'] === 'Sim').length.toLocaleString('pt-BR')}
+            </span>
+          </div>
+          {(statusFilter !== 'all' || priorityFilter !== 'all' || dateFilter !== 'all' || technicianFilter !== 'all') && (
+            <button
+              onClick={() => {
+                setStatusFilter('all')
+                setPriorityFilter('all')
+                setDateFilter('all')
+                setTechnicianFilter('all')
+                setSearchTerm('')
+              }}
+              className="ml-auto text-xs text-blue-400 hover:text-blue-300 underline"
+            >
+              Limpar Filtros
+            </button>
+          )}
+        </div>
+      </div>
+
       {/* Controles da tabela */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="relative">
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1 sm:flex-none sm:w-64">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <input
               type="text"
-              placeholder="Buscar nos chamados..."
+              placeholder="Buscar em todos os campos..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 pr-9 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full pl-10 pr-4 py-2.5 bg-gray-700/50 border border-gray-600 rounded-lg text-gray-300 placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
             />
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm('')}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white"
+              >
+                ×
+              </button>
+            )}
           </div>
           
           <div className="flex flex-wrap gap-2">
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="px-3 py-2.5 bg-gray-700/50 border border-gray-600 rounded-lg text-gray-300 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:bg-gray-700 transition-colors"
             >
-              <option value="all">Todos os Status</option>
-              <option value="Solucionado">Solucionado</option>
-              <option value="Fechado">Fechado</option>
-              <option value="Em andamento">Em andamento</option>
+              <option value="all">📊 Todos os Status</option>
+              <option value="Solucionado">✅ Solucionado</option>
+              <option value="Fechado">🔒 Fechado</option>
+              <option value="Em andamento">⚙️ Em andamento</option>
             </select>
             
             <select
               value={priorityFilter}
               onChange={(e) => setPriorityFilter(e.target.value)}
-              className="px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="px-3 py-2.5 bg-gray-700/50 border border-gray-600 rounded-lg text-gray-300 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:bg-gray-700 transition-colors"
             >
-              <option value="all">Todas as Prioridades</option>
-              <option value="Alta">Alta</option>
-              <option value="Média">Média</option>
-              <option value="Baixa">Baixa</option>
+              <option value="all">🎯 Todas as Prioridades</option>
+              <option value="Alta">🔴 Alta</option>
+              <option value="Média">🟡 Média</option>
+              <option value="Baixa">🟢 Baixa</option>
             </select>
             
             <select
               value={dateFilter}
               onChange={(e) => setDateFilter(e.target.value)}
-              className="px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="px-3 py-2.5 bg-gray-700/50 border border-gray-600 rounded-lg text-gray-300 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:bg-gray-700 transition-colors"
             >
-              <option value="all">Todas as Datas</option>
-              <option value="today">Hoje</option>
-              <option value="week">Última Semana</option>
-              <option value="month">Último Mês</option>
+              <option value="all">📅 Todas as Datas</option>
+              <option value="today">📆 Hoje</option>
+              <option value="week">📆 Última Semana</option>
+              <option value="month">📆 Último Mês</option>
             </select>
             
             <select
               value={technicianFilter}
               onChange={(e) => setTechnicianFilter(e.target.value)}
-              className="px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="px-3 py-2.5 bg-gray-700/50 border border-gray-600 rounded-lg text-gray-300 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:bg-gray-700 transition-colors min-w-[150px]"
             >
-              <option value="all">Todos os Técnicos</option>
+              <option value="all">👤 Todos os Técnicos</option>
               {technicians.map(tech => (
                 <option key={tech} value={tech}>{tech}</option>
               ))}
@@ -313,99 +407,172 @@ const TicketTable = ({ data, filterMode = 'none', initialSearchTerm = '' }) => {
       </div>
 
       {/* Tabela */}
-      <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-700">
-          <thead className="bg-gray-800">
+      <div className="overflow-x-auto rounded-lg border border-gray-700/50 shadow-soft">
+        <table className="min-w-full divide-y divide-gray-700/50">
+          <thead className="bg-gradient-to-r from-gray-800 to-gray-800/80 backdrop-blur-sm">
             <tr>
               <th
                 onClick={() => handleSort('ID')}
-                className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-700"
+                className="px-4 py-4 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-700/50 transition-colors sticky left-0 bg-gradient-to-r from-gray-800 to-gray-800/80 z-10"
               >
-                ID
-                {sortColumn === 'ID' && (
-                  <span className="text-blue-400 ml-1">
-                    {sortDirection === 'asc' ? '↑' : '↓'}
-                  </span>
-                )}
+                <div className="flex items-center gap-2">
+                  <span>#</span>
+                  {sortColumn === 'ID' && (
+                    <span className="text-blue-400">
+                      {sortDirection === 'asc' ? '↑' : '↓'}
+                    </span>
+                  )}
+                </div>
               </th>
               <th
                 onClick={() => handleSort('Título')}
-                className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-700"
+                className="px-4 py-4 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-700/50 transition-colors min-w-[200px]"
               >
-                Título
-                {sortColumn === 'Título' && (
-                  <span className="text-blue-400 ml-1">
-                    {sortDirection === 'asc' ? '↑' : '↓'}
-                  </span>
-                )}
+                <div className="flex items-center gap-2">
+                  <span>Título</span>
+                  {sortColumn === 'Título' && (
+                    <span className="text-blue-400">
+                      {sortDirection === 'asc' ? '↑' : '↓'}
+                    </span>
+                  )}
+                </div>
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+              <th className="px-4 py-4 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider">
+                <div className="flex items-center gap-2">
+                  <Tag className="h-3.5 w-3.5" />
+                  <span>Categoria</span>
+                </div>
+              </th>
+              <th className="px-4 py-4 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider">
                 Status
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+              <th className="px-4 py-4 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider">
                 Prioridade
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
-                Requerente
+              <th className="px-4 py-4 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider">
+                <div className="flex items-center gap-2">
+                  <User className="h-3.5 w-3.5" />
+                  <span>Técnico</span>
+                </div>
               </th>
               <th
                 onClick={() => handleSort('Data de abertura')}
-                className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-700"
+                className="px-4 py-4 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-700/50 transition-colors"
               >
-                Data Abertura
-                {sortColumn === 'Data de abertura' && (
-                  <span className="text-blue-400 ml-1">
-                    {sortDirection === 'asc' ? '↑' : '↓'}
-                  </span>
-                )}
+                <div className="flex items-center gap-2">
+                  <Calendar className="h-3.5 w-3.5" />
+                  <span>Data</span>
+                  {sortColumn === 'Data de abertura' && (
+                    <span className="text-blue-400">
+                      {sortDirection === 'asc' ? '↑' : '↓'}
+                    </span>
+                  )}
+                </div>
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
-                SLA
+              <th className="px-4 py-4 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider">
+                <div className="flex items-center gap-2">
+                  <Clock className="h-3.5 w-3.5" />
+                  <span>SLA</span>
+                </div>
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+              <th className="px-4 py-4 text-center text-xs font-semibold text-gray-300 uppercase tracking-wider">
                 Ações
               </th>
             </tr>
           </thead>
-          <tbody className="bg-gray-900 divide-y divide-gray-700">
-            {currentData.map((ticket, index) => (
-              <tr key={index} className="hover:bg-gray-800">
-                <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-white">
-                  {ticket.ID}
-                </td>
-                <td className="px-4 py-4 text-sm text-gray-300 max-w-xs truncate">
-                  {ticket.Título}
-                </td>
-                <td className="px-4 py-4 whitespace-nowrap">
-                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(ticket.Status)}`}>
-                    {ticket.Status}
-                  </span>
-                </td>
-                <td className="px-4 py-4 whitespace-nowrap">
-                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getPriorityColor(ticket.Prioridade)}`}>
-                    {ticket.Prioridade}
-                  </span>
-                </td>
-                <td className="px-4 py-4 text-sm text-gray-300 max-w-xs truncate">
-                  {ticket['Requerente - Requerente']}
-                </td>
-                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-300">
-                  {ticket['Data de abertura']}
-                </td>
-                <td className="px-4 py-4 whitespace-nowrap">
-                  {getSLAStatus(ticket)}
-                </td>
-                <td className="px-4 py-4 whitespace-nowrap">
-                  <button
-                    onClick={() => handleViewDetails(ticket)}
-                    className="flex items-center space-x-1 px-3 py-1 bg-blue-900/20 text-blue-400 rounded-lg hover:bg-blue-800/30 transition-colors text-sm"
-                  >
-                    <Eye className="h-3 w-3" />
-                    <span>Ver</span>
-                  </button>
+          <tbody className="bg-gray-900/50 divide-y divide-gray-700/30">
+            {currentData.length === 0 ? (
+              <tr>
+                <td colSpan="9" className="px-4 py-12 text-center">
+                  <div className="flex flex-col items-center gap-3">
+                    <Filter className="h-12 w-12 text-gray-600" />
+                    <p className="text-gray-400 font-medium">Nenhum chamado encontrado</p>
+                    <p className="text-gray-500 text-sm">Tente ajustar os filtros de busca</p>
+                  </div>
                 </td>
               </tr>
-            ))}
+            ) : (
+              currentData.map((ticket, index) => {
+                const timeElapsed = getTimeElapsed(ticket['Data de abertura'])
+                const technician = ticket['Técnico responsável'] || ticket['Atribuído - Técnico'] || 'Não atribuído'
+                const category = ticket.Categoria || ticket['Motivo'] || 'Não categorizado'
+                
+                return (
+                  <tr 
+                    key={index} 
+                    className="hover:bg-gray-800/50 transition-colors group border-b border-gray-700/30"
+                  >
+                    <td className="px-4 py-4 whitespace-nowrap text-sm font-bold text-blue-400 sticky left-0 bg-gray-900/95 group-hover:bg-gray-800/95 z-10 border-r border-gray-700/30">
+                      #{ticket.ID}
+                    </td>
+                    <td className="px-4 py-4 text-sm text-gray-200 min-w-[200px] max-w-md">
+                      <div className="flex flex-col gap-1">
+                        <span className="font-medium text-white truncate" title={ticket.Título}>
+                          {ticket.Título}
+                        </span>
+                        {ticket['Requerente - Requerente'] && (
+                          <span className="text-xs text-gray-500 truncate">
+                            Por: {ticket['Requerente - Requerente']}
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap">
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-purple-900/20 text-purple-300 rounded-lg text-xs font-medium border border-purple-500/20">
+                        <Tag className="h-3 w-3" />
+                        {category.length > 20 ? `${category.substring(0, 20)}...` : category}
+                      </span>
+                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap">
+                      <span className={`inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold rounded-lg border ${getStatusColor(ticket.Status)}`}>
+                        {ticket.Status}
+                      </span>
+                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap">
+                      <div className="flex flex-col gap-1">
+                        <span className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg border ${getPriorityColor(ticket.Prioridade)}`}>
+                          {ticket.Prioridade}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap">
+                      <div className="flex items-center gap-2">
+                        <User className="h-3.5 w-3.5 text-gray-500" />
+                        <span className="text-sm text-gray-300 max-w-[120px] truncate" title={technician}>
+                          {technician}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap">
+                      <div className="flex flex-col gap-1">
+                        <span className="text-sm text-gray-300">
+                          {ticket['Data de abertura']?.split(' ')[0] || 'N/A'}
+                        </span>
+                        {timeElapsed && (
+                          <span className="text-xs text-gray-500 flex items-center gap-1">
+                            <TrendingUp className="h-3 w-3" />
+                            {timeElapsed}
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap">
+                      {getSLAStatus(ticket)}
+                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap">
+                      <button
+                        onClick={() => handleViewDetails(ticket)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600/20 text-blue-400 rounded-lg hover:bg-blue-600/30 hover:text-blue-300 transition-all duration-200 text-sm font-medium border border-blue-500/20 hover:border-blue-500/40 hover:scale-105 active:scale-95"
+                        title="Ver detalhes completos"
+                      >
+                        <Eye className="h-4 w-4" />
+                        <span className="hidden sm:inline">Detalhes</span>
+                      </button>
+                    </td>
+                  </tr>
+                )
+              })
+            )}
           </tbody>
         </table>
       </div>

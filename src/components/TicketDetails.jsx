@@ -8,7 +8,55 @@ const TicketDetails = ({ ticket, isOpen, onClose, onEvaluate }) => {
   const [starHover, setStarHover] = useState(null)
   const [starComment, setStarComment] = useState('')
 
-  if (!isOpen || !ticket) return null
+  if (!isOpen) return null
+
+  // Se não houver ticket, mostrar mensagem de erro
+  if (!ticket || typeof ticket !== 'object') {
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-lg max-w-md w-full p-6">
+          <div className="text-center">
+            <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+            <h2 className="text-xl font-bold text-gray-900 mb-2">Erro ao carregar chamado</h2>
+            <p className="text-gray-600 mb-4">Não foi possível carregar as informações do chamado.</p>
+            <button
+              onClick={onClose}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Fechar
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Debug: verificar se o ticket está sendo recebido
+  if (process.env.NODE_ENV === 'development') {
+    console.log('Ticket recebido:', ticket)
+    console.log('Chaves do ticket:', Object.keys(ticket))
+  }
+
+  // Garantir que temos um objeto válido e normalizar os dados
+  const normalizedTicket = {
+    ID: ticket.ID || ticket.id || 'N/A',
+    Título: ticket.Título || ticket.título || ticket.title || 'Sem título',
+    Descrição: ticket.Descrição || ticket.descrição || ticket.description || ticket.Descrição || '',
+    Status: ticket.Status || ticket.status || 'Não definido',
+    Prioridade: ticket.Prioridade || ticket.prioridade || ticket.priority || 'Não definida',
+    Categoria: ticket.Categoria || ticket.categoria || ticket.category || ticket['Motivo'] || 'Não categorizado',
+    'Requerente - Requerente': ticket['Requerente - Requerente'] || ticket.requerente || ticket.requester || 'Não informado',
+    'Atribuído - Técnico': ticket['Atribuído - Técnico'] || ticket['Técnico responsável'] || ticket.assignedTo || ticket.assigned_to || 'Não atribuído',
+    'Data de abertura': ticket['Data de abertura'] || ticket.dataAbertura || ticket.created_at || 'Não informada',
+    'Data da solução': ticket['Data da solução'] || ticket.dataSolucao || ticket.closed_at || null,
+    'Tempo para solução': ticket['Tempo para solução'] || ticket.tempoSolucao || ticket.timeToResolve || '',
+    'SLA - SLA Tempo para solução': ticket['SLA - SLA Tempo para solução'] || ticket.sla || ticket.slaTime || '',
+    'Tempo para resolver excedido': ticket['Tempo para resolver excedido'] || ticket.slaExceeded || 'Não',
+    'Estatísticas - Tempo de espera': ticket['Estatísticas - Tempo de espera'] || ticket.waitTime || '',
+    'Estatísticas - Tempo de atribuição': ticket['Estatísticas - Tempo de atribuição'] || ticket.assignmentTime || '',
+    'Estatísticas - Tempo de solução': ticket['Estatísticas - Tempo de solução'] || ticket.resolutionTime || '',
+    'Solução - Solução': ticket['Solução - Solução'] || ticket.solucao || ticket.solution || ''
+  }
 
   const handleEvaluate = (rating) => {
     setEvaluation(rating)
@@ -16,7 +64,7 @@ const TicketDetails = ({ ticket, isOpen, onClose, onEvaluate }) => {
 
   const handleSubmitEvaluation = () => {
     if (evaluation && onEvaluate) {
-      onEvaluate(ticket.ID, evaluation, comment)
+      onEvaluate(normalizedTicket.ID, evaluation, comment)
       setEvaluation(null)
       setComment('')
       onClose()
@@ -28,7 +76,7 @@ const TicketDetails = ({ ticket, isOpen, onClose, onEvaluate }) => {
     const existing = JSON.parse(localStorage.getItem('starEvaluations') || '[]')
     const newReview = {
       id: Date.now(),
-      ticketId: ticket.ID,
+      ticketId: normalizedTicket.ID,
       stars: starRating,
       comment: starComment.trim(),
       date: new Date().toISOString()
@@ -123,12 +171,12 @@ const TicketDetails = ({ ticket, isOpen, onClose, onEvaluate }) => {
 
   // Cálculos detalhados de SLA
   const slaDetails = useMemo(() => {
-    const slaDefined = ticket['SLA - SLA Tempo para solução'] || ''
-    const timeToResolve = ticket['Tempo para solução'] || ''
-    const isExceeded = ticket['Tempo para resolver excedido'] === 'Sim'
-    const waitTime = ticket['Estatísticas - Tempo de espera'] || ''
-    const assignmentTime = ticket['Estatísticas - Tempo de atribuição'] || ''
-    const resolutionTime = ticket['Estatísticas - Tempo de solução'] || ''
+    const slaDefined = normalizedTicket['SLA - SLA Tempo para solução'] || ''
+    const timeToResolve = normalizedTicket['Tempo para solução'] || ''
+    const isExceeded = normalizedTicket['Tempo para resolver excedido'] === 'Sim'
+    const waitTime = normalizedTicket['Estatísticas - Tempo de espera'] || ''
+    const assignmentTime = normalizedTicket['Estatísticas - Tempo de atribuição'] || ''
+    const resolutionTime = normalizedTicket['Estatísticas - Tempo de solução'] || ''
     
     const slaMinutes = parseSLAToMinutes(slaDefined)
     const usedMinutes = parseTimeToMinutes(timeToResolve)
@@ -175,7 +223,7 @@ const TicketDetails = ({ ticket, isOpen, onClose, onEvaluate }) => {
       statusText,
       statusIcon
     }
-  }, [ticket])
+  }, [normalizedTicket])
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -186,10 +234,10 @@ const TicketDetails = ({ ticket, isOpen, onClose, onEvaluate }) => {
             <Tag className="h-6 w-6 text-primary-600" />
             <div>
               <h2 className="text-xl font-bold text-gray-900">
-                Chamado #{ticket.ID}
+                Chamado #{normalizedTicket.ID}
               </h2>
               <p className="text-sm text-gray-600">
-                {ticket.Categoria}
+                {normalizedTicket.Categoria}
               </p>
             </div>
           </div>
@@ -208,19 +256,19 @@ const TicketDetails = ({ ticket, isOpen, onClose, onEvaluate }) => {
             <div className="space-y-4">
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  {ticket.Título}
+                  {normalizedTicket.Título}
                 </h3>
                 <p className="text-gray-600 text-sm">
-                  {ticket.Descrição || 'Sem descrição disponível'}
+                  {normalizedTicket.Descrição || 'Sem descrição disponível'}
                 </p>
               </div>
 
               <div className="flex items-center space-x-4">
-                <span className={`inline-flex px-3 py-1 text-sm font-semibold rounded-full ${getStatusColor(ticket.Status)}`}>
-                  {ticket.Status}
+                <span className={`inline-flex px-3 py-1 text-sm font-semibold rounded-full ${getStatusColor(normalizedTicket.Status)}`}>
+                  {normalizedTicket.Status}
                 </span>
-                <span className={`inline-flex px-3 py-1 text-sm font-semibold rounded-full ${getPriorityColor(ticket.Prioridade)}`}>
-                  {ticket.Prioridade}
+                <span className={`inline-flex px-3 py-1 text-sm font-semibold rounded-full ${getPriorityColor(normalizedTicket.Prioridade)}`}>
+                  {normalizedTicket.Prioridade}
                 </span>
               </div>
             </div>
@@ -229,25 +277,25 @@ const TicketDetails = ({ ticket, isOpen, onClose, onEvaluate }) => {
               <div className="flex items-center space-x-2">
                 <User className="h-4 w-4 text-gray-500" />
                 <span className="text-sm text-gray-600">
-                  <strong>Requerente:</strong> {ticket['Requerente - Requerente']}
+                  <strong>Requerente:</strong> {normalizedTicket['Requerente - Requerente']}
                 </span>
               </div>
               <div className="flex items-center space-x-2">
                 <User className="h-4 w-4 text-gray-500" />
                 <span className="text-sm text-gray-600">
-                  <strong>Técnico:</strong> {ticket['Atribuído - Técnico']}
+                  <strong>Técnico:</strong> {normalizedTicket['Atribuído - Técnico']}
                 </span>
               </div>
               <div className="flex items-center space-x-2">
                 <Clock className="h-4 w-4 text-gray-500" />
                 <span className="text-sm text-gray-600">
-                  <strong>Abertura:</strong> {ticket['Data de abertura']}
+                  <strong>Abertura:</strong> {normalizedTicket['Data de abertura']}
                 </span>
               </div>
               <div className="flex items-center space-x-2">
                 <Clock className="h-4 w-4 text-gray-500" />
                 <span className="text-sm text-gray-600">
-                  <strong>Solução:</strong> {ticket['Data da solução'] || 'Pendente'}
+                  <strong>Solução:</strong> {normalizedTicket['Data da solução'] || 'Pendente'}
                 </span>
               </div>
             </div>
@@ -260,26 +308,26 @@ const TicketDetails = ({ ticket, isOpen, onClose, onEvaluate }) => {
               <div className="text-center">
                 <p className="text-sm text-gray-600">Tempo de Espera</p>
                 <p className="text-lg font-semibold text-blue-600">
-                  {formatTime(ticket['Estatísticas - Tempo de espera'])}
+                  {formatTime(normalizedTicket['Estatísticas - Tempo de espera'])}
                 </p>
               </div>
               <div className="text-center">
                 <p className="text-sm text-gray-600">Tempo de Atribuição</p>
                 <p className="text-lg font-semibold text-green-600">
-                  {formatTime(ticket['Estatísticas - Tempo de atribuição'])}
+                  {formatTime(normalizedTicket['Estatísticas - Tempo de atribuição'])}
                 </p>
               </div>
               <div className="text-center">
                 <p className="text-sm text-gray-600">Tempo de Solução</p>
                 <p className="text-lg font-semibold text-purple-600">
-                  {formatTime(ticket['Estatísticas - Tempo de solução'])}
+                  {formatTime(normalizedTicket['Estatísticas - Tempo de solução'])}
                 </p>
               </div>
             </div>
           </div>
 
           {/* Solução */}
-          {ticket['Solução - Solução'] && (
+          {normalizedTicket['Solução - Solução'] && (
             <div>
               <h4 className="font-semibold text-gray-900 mb-3 flex items-center space-x-2">
                 <MessageSquare className="h-5 w-5" />
@@ -287,7 +335,7 @@ const TicketDetails = ({ ticket, isOpen, onClose, onEvaluate }) => {
               </h4>
               <div className="bg-green-50 p-4 rounded-lg border border-green-200">
                 <p className="text-gray-800 whitespace-pre-wrap">
-                  {ticket['Solução - Solução']}
+                  {normalizedTicket['Solução - Solução']}
                 </p>
               </div>
             </div>
@@ -354,7 +402,7 @@ const TicketDetails = ({ ticket, isOpen, onClose, onEvaluate }) => {
                   <Clock className="h-4 w-4 text-purple-600" />
                   <span className="text-xs font-medium text-gray-600">Tempo Utilizado</span>
                 </div>
-                <p className="text-lg font-bold text-gray-900">{formatTime(ticket['Tempo para solução'])}</p>
+                <p className="text-lg font-bold text-gray-900">{formatTime(normalizedTicket['Tempo para solução'])}</p>
                 <p className="text-xs text-gray-500 mt-1">
                   {slaDetails.usedMinutes > 0 ? `(${Math.round(slaDetails.usedMinutes)} minutos)` : ''}
                 </p>
@@ -422,7 +470,7 @@ const TicketDetails = ({ ticket, isOpen, onClose, onEvaluate }) => {
                   </div>
                   <div className="flex items-center space-x-2">
                     <span className="text-sm font-semibold text-gray-900">
-                      {formatTime(ticket['Estatísticas - Tempo de espera'])}
+                      {formatTime(normalizedTicket['Estatísticas - Tempo de espera'])}
                     </span>
                     {slaDetails.waitMinutes > 0 && slaDetails.slaMinutes > 0 && (
                       <span className="text-xs text-gray-500">
@@ -438,7 +486,7 @@ const TicketDetails = ({ ticket, isOpen, onClose, onEvaluate }) => {
                   </div>
                   <div className="flex items-center space-x-2">
                     <span className="text-sm font-semibold text-gray-900">
-                      {formatTime(ticket['Estatísticas - Tempo de atribuição'])}
+                      {formatTime(normalizedTicket['Estatísticas - Tempo de atribuição'])}
                     </span>
                     {slaDetails.assignmentMinutes > 0 && slaDetails.slaMinutes > 0 && (
                       <span className="text-xs text-gray-500">
@@ -454,7 +502,7 @@ const TicketDetails = ({ ticket, isOpen, onClose, onEvaluate }) => {
                   </div>
                   <div className="flex items-center space-x-2">
                     <span className="text-sm font-semibold text-gray-900">
-                      {formatTime(ticket['Estatísticas - Tempo de solução'])}
+                      {formatTime(normalizedTicket['Estatísticas - Tempo de solução'])}
                     </span>
                     {slaDetails.resolutionMinutes > 0 && slaDetails.slaMinutes > 0 && (
                       <span className="text-xs text-gray-500">
@@ -475,14 +523,14 @@ const TicketDetails = ({ ticket, isOpen, onClose, onEvaluate }) => {
                     <strong>Prazo Acordado:</strong> {slaDetails.slaDefined || 'Não definido'}
                   </p>
                   <p className="text-gray-600">
-                    <strong>Tempo Total:</strong> {formatTime(ticket['Tempo para solução'])}
+                    <strong>Tempo Total:</strong> {formatTime(normalizedTicket['Tempo para solução'])}
                   </p>
                   <p className="text-gray-600">
-                    <strong>Data de Abertura:</strong> {ticket['Data de abertura']}
+                    <strong>Data de Abertura:</strong> {normalizedTicket['Data de abertura']}
                   </p>
-                  {ticket['Data da solução'] && (
+                  {normalizedTicket['Data da solução'] && (
                     <p className="text-gray-600">
-                      <strong>Data de Solução:</strong> {ticket['Data da solução']}
+                      <strong>Data de Solução:</strong> {normalizedTicket['Data da solução']}
                     </p>
                   )}
                 </div>
