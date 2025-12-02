@@ -8,59 +8,88 @@ const TicketDetails = ({ ticket, isOpen, onClose, onEvaluate }) => {
   const [starHover, setStarHover] = useState(null)
   const [starComment, setStarComment] = useState('')
 
-  if (!isOpen) return null
-
-  // Se não houver ticket, mostrar mensagem de erro
-  if (!ticket || typeof ticket !== 'object') {
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-lg max-w-md w-full p-6">
-          <div className="text-center">
-            <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-            <h2 className="text-xl font-bold text-gray-900 mb-2">Erro ao carregar chamado</h2>
-            <p className="text-gray-600 mb-4">Não foi possível carregar as informações do chamado.</p>
-            <button
-              onClick={onClose}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              Fechar
-            </button>
-          </div>
-        </div>
-      </div>
-    )
+  // Funções auxiliares (definidas fora dos hooks mas usadas dentro)
+  // Função para converter tempo em minutos
+  const parseTimeToMinutes = (timeStr) => {
+    if (!timeStr) return 0
+    
+    const hoursMatch = timeStr.match(/(\d+)\s*hora/)
+    const minutesMatch = timeStr.match(/(\d+)\s*minuto/)
+    const secondsMatch = timeStr.match(/(\d+)\s*segundo/)
+    
+    let totalMinutes = 0
+    if (hoursMatch) totalMinutes += parseInt(hoursMatch[1]) * 60
+    if (minutesMatch) totalMinutes += parseInt(minutesMatch[1])
+    if (secondsMatch) totalMinutes += parseInt(secondsMatch[1]) / 60
+    
+    return totalMinutes
   }
 
-  // Debug: verificar se o ticket está sendo recebido
-  console.log('Ticket recebido no TicketDetails:', ticket)
-  if (ticket) {
-    console.log('Chaves do ticket:', Object.keys(ticket))
-    console.log('Tipo do ticket:', typeof ticket)
+  // Função para converter SLA definido em minutos
+  const parseSLAToMinutes = (slaStr) => {
+    if (!slaStr) return 0
+    
+    // Tenta diferentes formatos: "8 horas", "8h", "480 minutos", etc.
+    const hoursMatch = slaStr.match(/(\d+)\s*h/i)
+    const minutesMatch = slaStr.match(/(\d+)\s*min/i)
+    const daysMatch = slaStr.match(/(\d+)\s*d/i)
+    
+    let totalMinutes = 0
+    if (daysMatch) totalMinutes += parseInt(daysMatch[1]) * 24 * 60
+    if (hoursMatch) totalMinutes += parseInt(hoursMatch[1]) * 60
+    if (minutesMatch) totalMinutes += parseInt(minutesMatch[1])
+    
+    return totalMinutes
   }
 
   // Preservar todos os campos originais do ticket e normalizar apenas os campos necessários
-  const normalizedTicket = {
-    // Preservar todos os campos originais
-    ...ticket,
-    // Sobrescrever com valores normalizados apenas se necessário
-    ID: ticket.ID || ticket.id || ticket['ID'] || 'N/A',
-    Título: ticket.Título || ticket.título || ticket.title || ticket['Título'] || 'Sem título',
-    Descrição: ticket.Descrição || ticket.descrição || ticket.description || ticket['Descrição'] || '',
-    Status: ticket.Status || ticket.status || ticket['Status'] || 'Não definido',
-    Prioridade: ticket.Prioridade || ticket.prioridade || ticket.priority || ticket['Prioridade'] || 'Não definida',
-    Categoria: ticket.Categoria || ticket.categoria || ticket.category || ticket['Categoria'] || ticket['Motivo'] || 'Não categorizado',
-    'Requerente - Requerente': ticket['Requerente - Requerente'] || ticket.requerente || ticket.requester || 'Não informado',
-    'Atribuído - Técnico': ticket['Atribuído - Técnico'] || ticket['Técnico responsável'] || ticket.assignedTo || ticket.assigned_to || 'Não atribuído',
-    'Data de abertura': ticket['Data de abertura'] || ticket.dataAbertura || ticket.created_at || 'Não informada',
-    'Data da solução': ticket['Data da solução'] || ticket.dataSolucao || ticket.closed_at || null,
-    'Tempo para solução': ticket['Tempo para solução'] || ticket.tempoSolucao || ticket.timeToResolve || '',
-    'SLA - SLA Tempo para solução': ticket['SLA - SLA Tempo para solução'] || ticket.sla || ticket.slaTime || '',
-    'Tempo para resolver excedido': ticket['Tempo para resolver excedido'] || ticket.slaExceeded || 'Não',
-    'Estatísticas - Tempo de espera': ticket['Estatísticas - Tempo de espera'] || ticket.waitTime || '',
-    'Estatísticas - Tempo de atribuição': ticket['Estatísticas - Tempo de atribuição'] || ticket.assignmentTime || '',
-    'Estatísticas - Tempo de solução': ticket['Estatísticas - Tempo de solução'] || ticket.resolutionTime || '',
-    'Solução - Solução': ticket['Solução - Solução'] || ticket.solucao || ticket.solution || ''
-  }
+  // IMPORTANTE: Criar objeto seguro mesmo quando ticket é null/undefined para não quebrar os hooks
+  const normalizedTicket = useMemo(() => {
+    if (!ticket || typeof ticket !== 'object') {
+      return {
+        ID: 'N/A',
+        Título: 'Sem título',
+        Descrição: '',
+        Status: 'Não definido',
+        Prioridade: 'Não definida',
+        Categoria: 'Não categorizado',
+        'Requerente - Requerente': 'Não informado',
+        'Atribuído - Técnico': 'Não atribuído',
+        'Data de abertura': 'Não informada',
+        'Data da solução': null,
+        'Tempo para solução': '',
+        'SLA - SLA Tempo para solução': '',
+        'Tempo para resolver excedido': 'Não',
+        'Estatísticas - Tempo de espera': '',
+        'Estatísticas - Tempo de atribuição': '',
+        'Estatísticas - Tempo de solução': '',
+        'Solução - Solução': ''
+      }
+    }
+
+    return {
+      // Preservar todos os campos originais
+      ...ticket,
+      // Sobrescrever com valores normalizados apenas se necessário
+      ID: ticket.ID || ticket.id || ticket['ID'] || 'N/A',
+      Título: ticket.Título || ticket.título || ticket.title || ticket['Título'] || 'Sem título',
+      Descrição: ticket.Descrição || ticket.descrição || ticket.description || ticket['Descrição'] || '',
+      Status: ticket.Status || ticket.status || ticket['Status'] || 'Não definido',
+      Prioridade: ticket.Prioridade || ticket.prioridade || ticket.priority || ticket['Prioridade'] || 'Não definida',
+      Categoria: ticket.Categoria || ticket.categoria || ticket.category || ticket['Categoria'] || ticket['Motivo'] || 'Não categorizado',
+      'Requerente - Requerente': ticket['Requerente - Requerente'] || ticket.requerente || ticket.requester || 'Não informado',
+      'Atribuído - Técnico': ticket['Atribuído - Técnico'] || ticket['Técnico responsável'] || ticket.assignedTo || ticket.assigned_to || 'Não atribuído',
+      'Data de abertura': ticket['Data de abertura'] || ticket.dataAbertura || ticket.created_at || 'Não informada',
+      'Data da solução': ticket['Data da solução'] || ticket.dataSolucao || ticket.closed_at || null,
+      'Tempo para solução': ticket['Tempo para solução'] || ticket.tempoSolucao || ticket.timeToResolve || '',
+      'SLA - SLA Tempo para solução': ticket['SLA - SLA Tempo para solução'] || ticket.sla || ticket.slaTime || '',
+      'Tempo para resolver excedido': ticket['Tempo para resolver excedido'] || ticket.slaExceeded || 'Não',
+      'Estatísticas - Tempo de espera': ticket['Estatísticas - Tempo de espera'] || ticket.waitTime || '',
+      'Estatísticas - Tempo de atribuição': ticket['Estatísticas - Tempo de atribuição'] || ticket.assignmentTime || '',
+      'Estatísticas - Tempo de solução': ticket['Estatísticas - Tempo de solução'] || ticket.resolutionTime || '',
+      'Solução - Solução': ticket['Solução - Solução'] || ticket.solucao || ticket.solution || ''
+    }
+  }, [ticket])
 
   const handleEvaluate = (rating) => {
     setEvaluation(rating)
@@ -119,61 +148,7 @@ const TicketDetails = ({ ticket, isOpen, onClose, onEvaluate }) => {
     }
   }
 
-  const formatTime = (timeStr) => {
-    if (!timeStr) return 'N/A'
-    
-    const hoursMatch = timeStr.match(/(\d+)\s*hora/)
-    const minutesMatch = timeStr.match(/(\d+)\s*minuto/)
-    const secondsMatch = timeStr.match(/(\d+)\s*segundo/)
-    
-    let totalMinutes = 0
-    if (hoursMatch) totalMinutes += parseInt(hoursMatch[1]) * 60
-    if (minutesMatch) totalMinutes += parseInt(minutesMatch[1])
-    if (secondsMatch) totalMinutes += parseInt(secondsMatch[1]) / 60
-    
-    if (totalMinutes < 60) {
-      return `${Math.round(totalMinutes)} min`
-    } else {
-      const hours = Math.floor(totalMinutes / 60)
-      const minutes = Math.round(totalMinutes % 60)
-      return `${hours}h ${minutes}min`
-    }
-  }
-
-  // Função para converter tempo em minutos
-  const parseTimeToMinutes = (timeStr) => {
-    if (!timeStr) return 0
-    
-    const hoursMatch = timeStr.match(/(\d+)\s*hora/)
-    const minutesMatch = timeStr.match(/(\d+)\s*minuto/)
-    const secondsMatch = timeStr.match(/(\d+)\s*segundo/)
-    
-    let totalMinutes = 0
-    if (hoursMatch) totalMinutes += parseInt(hoursMatch[1]) * 60
-    if (minutesMatch) totalMinutes += parseInt(minutesMatch[1])
-    if (secondsMatch) totalMinutes += parseInt(secondsMatch[1]) / 60
-    
-    return totalMinutes
-  }
-
-  // Função para converter SLA definido em minutos
-  const parseSLAToMinutes = (slaStr) => {
-    if (!slaStr) return 0
-    
-    // Tenta diferentes formatos: "8 horas", "8h", "480 minutos", etc.
-    const hoursMatch = slaStr.match(/(\d+)\s*h/i)
-    const minutesMatch = slaStr.match(/(\d+)\s*min/i)
-    const daysMatch = slaStr.match(/(\d+)\s*d/i)
-    
-    let totalMinutes = 0
-    if (daysMatch) totalMinutes += parseInt(daysMatch[1]) * 24 * 60
-    if (hoursMatch) totalMinutes += parseInt(hoursMatch[1]) * 60
-    if (minutesMatch) totalMinutes += parseInt(minutesMatch[1])
-    
-    return totalMinutes
-  }
-
-  // Cálculos detalhados de SLA
+  // Cálculos detalhados de SLA - deve ser chamado antes de qualquer early return
   const slaDetails = useMemo(() => {
     const slaDefined = normalizedTicket['SLA - SLA Tempo para solução'] || ''
     const timeToResolve = normalizedTicket['Tempo para solução'] || ''
@@ -228,6 +203,59 @@ const TicketDetails = ({ ticket, isOpen, onClose, onEvaluate }) => {
       statusIcon
     }
   }, [normalizedTicket])
+
+  // Função para formatar tempo (não é um hook, pode estar aqui)
+  const formatTime = (timeStr) => {
+    if (!timeStr) return 'N/A'
+    
+    const hoursMatch = timeStr.match(/(\d+)\s*hora/)
+    const minutesMatch = timeStr.match(/(\d+)\s*minuto/)
+    const secondsMatch = timeStr.match(/(\d+)\s*segundo/)
+    
+    let totalMinutes = 0
+    if (hoursMatch) totalMinutes += parseInt(hoursMatch[1]) * 60
+    if (minutesMatch) totalMinutes += parseInt(minutesMatch[1])
+    if (secondsMatch) totalMinutes += parseInt(secondsMatch[1]) / 60
+    
+    if (totalMinutes < 60) {
+      return `${Math.round(totalMinutes)} min`
+    } else {
+      const hours = Math.floor(totalMinutes / 60)
+      const minutes = Math.round(totalMinutes % 60)
+      return `${hours}h ${minutes}min`
+    }
+  }
+
+  // Early returns DEPOIS de todos os hooks
+  if (!isOpen) return null
+
+  // Se não houver ticket, mostrar mensagem de erro
+  if (!ticket || typeof ticket !== 'object') {
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-lg max-w-md w-full p-6">
+          <div className="text-center">
+            <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+            <h2 className="text-xl font-bold text-gray-900 mb-2">Erro ao carregar chamado</h2>
+            <p className="text-gray-600 mb-4">Não foi possível carregar as informações do chamado.</p>
+            <button
+              onClick={onClose}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Fechar
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Debug: verificar se o ticket está sendo recebido
+  console.log('Ticket recebido no TicketDetails:', ticket)
+  if (ticket) {
+    console.log('Chaves do ticket:', Object.keys(ticket))
+    console.log('Tipo do ticket:', typeof ticket)
+  }
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
