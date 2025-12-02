@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react'
-import { X, ThumbsUp, ThumbsDown, Clock, User, Tag, MessageSquare, Star, AlertTriangle, TrendingUp, TrendingDown, Target, Timer, CheckCircle2, XCircle, Activity, Gauge, Shield, Zap, BarChart3, GaugeCircle, Award, Info, Lightbulb, AlertCircle, TrendingFlat } from 'lucide-react'
+import { X, ThumbsUp, ThumbsDown, Clock, User, Tag, MessageSquare, Star, AlertTriangle, TrendingUp, TrendingDown, Target, Timer, CheckCircle2, XCircle, Activity, Gauge, Shield, Zap, BarChart3, GaugeCircle, Award, Info, Lightbulb, AlertCircle, Minus } from 'lucide-react'
 
 const TicketDetails = ({ ticket, isOpen, onClose, onEvaluate }) => {
   const [evaluation, setEvaluation] = useState(null)

@@ -36,6 +36,9 @@ function App() {
     setData(null)
     setColumns([])
     setCurrentView('upload')
+    // Limpar localStorage de dados antigos
+    localStorage.removeItem('dashboard-data')
+    localStorage.removeItem('dashboard-columns')
     addNotification({
       type: 'info',
       title: 'Dashboard Resetado',
@@ -46,7 +49,18 @@ function App() {
 
   const handleViewChange = (view) => {
     setCurrentView(view)
+    // Se mudar para upload e não houver dados, garantir que o uploader apareça
+    if (view === 'upload' && !data) {
+      // Força re-render
+    }
   }
+
+  // Garantir que quando não há dados, sempre mostre o uploader (exceto se estiver em integration)
+  useEffect(() => {
+    if (!data && currentView !== 'integration') {
+      setCurrentView('upload')
+    }
+  }, [data])
 
   // Efeito para aplicar tema salvo
   useEffect(() => {
@@ -77,17 +91,21 @@ function App() {
           <div className="animate-fade-in">
             <CoreplanIntegration />
           </div>
-        ) : !data ? (
+        ) : !data || data.length === 0 ? (
           <div className="animate-fade-in">
-            <CSVUploader onDataLoaded={handleDataLoaded} />
+            <ErrorBoundary>
+              <CSVUploader onDataLoaded={handleDataLoaded} />
+            </ErrorBoundary>
           </div>
         ) : (
           <div className="animate-slide-up">
-            <Dashboard 
-              data={data} 
-              columns={columns} 
-              onReset={handleReset} 
-            />
+            <ErrorBoundary>
+              <Dashboard 
+                data={data} 
+                columns={columns} 
+                onReset={handleReset} 
+              />
+            </ErrorBoundary>
           </div>
         )}
       </main>

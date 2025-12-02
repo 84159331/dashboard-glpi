@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react'
 import {
   User, TrendingUp, TrendingDown, Target, Award, Clock, AlertTriangle,
   CheckCircle, XCircle, BarChart3, Activity, Zap, Shield, Trophy,
-  Users, Calendar, Star, Lightbulb, TrendingFlat, ArrowUp, ArrowDown,
+  Users, Calendar, Star, Lightbulb, Minus, ArrowUp, ArrowDown,
   PieChart, Gauge, Percent, Sparkles, Gift
 } from 'lucide-react'
 import { LineChart as RechartsLineChart, Line, BarChart, Bar, PieChart as RechartsPieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from 'recharts'
