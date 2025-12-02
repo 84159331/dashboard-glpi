@@ -32,19 +32,23 @@ const TicketDetails = ({ ticket, isOpen, onClose, onEvaluate }) => {
   }
 
   // Debug: verificar se o ticket está sendo recebido
-  if (process.env.NODE_ENV === 'development') {
-    console.log('Ticket recebido:', ticket)
+  console.log('Ticket recebido no TicketDetails:', ticket)
+  if (ticket) {
     console.log('Chaves do ticket:', Object.keys(ticket))
+    console.log('Tipo do ticket:', typeof ticket)
   }
 
-  // Garantir que temos um objeto válido e normalizar os dados
+  // Preservar todos os campos originais do ticket e normalizar apenas os campos necessários
   const normalizedTicket = {
-    ID: ticket.ID || ticket.id || 'N/A',
-    Título: ticket.Título || ticket.título || ticket.title || 'Sem título',
-    Descrição: ticket.Descrição || ticket.descrição || ticket.description || ticket.Descrição || '',
-    Status: ticket.Status || ticket.status || 'Não definido',
-    Prioridade: ticket.Prioridade || ticket.prioridade || ticket.priority || 'Não definida',
-    Categoria: ticket.Categoria || ticket.categoria || ticket.category || ticket['Motivo'] || 'Não categorizado',
+    // Preservar todos os campos originais
+    ...ticket,
+    // Sobrescrever com valores normalizados apenas se necessário
+    ID: ticket.ID || ticket.id || ticket['ID'] || 'N/A',
+    Título: ticket.Título || ticket.título || ticket.title || ticket['Título'] || 'Sem título',
+    Descrição: ticket.Descrição || ticket.descrição || ticket.description || ticket['Descrição'] || '',
+    Status: ticket.Status || ticket.status || ticket['Status'] || 'Não definido',
+    Prioridade: ticket.Prioridade || ticket.prioridade || ticket.priority || ticket['Prioridade'] || 'Não definida',
+    Categoria: ticket.Categoria || ticket.categoria || ticket.category || ticket['Categoria'] || ticket['Motivo'] || 'Não categorizado',
     'Requerente - Requerente': ticket['Requerente - Requerente'] || ticket.requerente || ticket.requester || 'Não informado',
     'Atribuído - Técnico': ticket['Atribuído - Técnico'] || ticket['Técnico responsável'] || ticket.assignedTo || ticket.assigned_to || 'Não atribuído',
     'Data de abertura': ticket['Data de abertura'] || ticket.dataAbertura || ticket.created_at || 'Não informada',

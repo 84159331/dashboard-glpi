@@ -79,7 +79,19 @@ const CategoryAnalysis = ({ data }) => {
   }, [data])
 
   const handleViewTicket = (ticket) => {
-    setSelectedTicket(ticket)
+    if (!ticket) {
+      console.error('Ticket não encontrado')
+      return
+    }
+    
+    // Garantir que estamos passando uma cópia completa do objeto ticket com todos os campos
+    const ticketCopy = { ...ticket }
+    
+    console.log('Abrindo detalhes do ticket ID:', ticketCopy.ID || ticketCopy.id)
+    console.log('Ticket completo:', ticketCopy)
+    console.log('Campos do ticket:', Object.keys(ticketCopy))
+    
+    setSelectedTicket(ticketCopy)
     setIsDetailsOpen(true)
   }
 
@@ -228,67 +240,130 @@ const CategoryAnalysis = ({ data }) => {
             </button>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Título</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Prioridade</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Requerente</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Data</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ações</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {categoryStats
-                  .find(cat => cat.name === selectedCategory)
-                  ?.tickets.map((ticket, index) => (
-                    <tr key={index} className="hover:bg-gray-50">
-                      <td className="px-4 py-4 text-sm font-medium text-gray-900">
-                        {ticket.ID}
-                      </td>
-                      <td className="px-4 py-4 text-sm text-gray-900 max-w-xs truncate">
-                        {ticket.Título}
-                      </td>
-                      <td className="px-4 py-4">
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                          ticket.Status === 'Solucionado' ? 'bg-green-100 text-green-800' :
-                          ticket.Status === 'Fechado' ? 'bg-gray-100 text-gray-800' :
-                          'bg-blue-100 text-blue-800'
-                        }`}>
-                          {ticket.Status}
-                        </span>
-                      </td>
-                      <td className="px-4 py-4">
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                          ticket.Prioridade === 'Alta' ? 'bg-red-100 text-red-800' :
-                          ticket.Prioridade === 'Média' ? 'bg-yellow-100 text-yellow-800' :
-                          'bg-green-100 text-green-800'
-                        }`}>
-                          {ticket.Prioridade}
-                        </span>
-                      </td>
-                      <td className="px-4 py-4 text-sm text-gray-900 max-w-xs truncate">
-                        {ticket['Requerente - Requerente']}
-                      </td>
-                      <td className="px-4 py-4 text-sm text-gray-900">
-                        {ticket['Data de abertura']}
-                      </td>
-                      <td className="px-4 py-4">
-                        <button
-                          onClick={() => handleViewTicket(ticket)}
-                          className="flex items-center space-x-1 px-3 py-1 bg-primary-100 text-primary-700 rounded-lg hover:bg-primary-200 transition-colors text-sm"
-                        >
-                          <Star className="h-3 w-3" />
-                          <span>Analisar</span>
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-              </tbody>
-            </table>
+          {/* Visualização em Cards (Mobile/Tablet) */}
+          <div className="lg:hidden space-y-3">
+            {categoryStats
+              .find(cat => cat.name === selectedCategory)
+              ?.tickets.map((ticket, index) => (
+                <div
+                  key={index}
+                  className="bg-gray-50 rounded-lg border border-gray-200 p-4 hover:bg-gray-100 transition-colors"
+                >
+                  <div className="flex items-start justify-between gap-3 mb-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-sm font-bold text-blue-600">#{ticket.ID}</span>
+                        <div className="flex flex-wrap gap-1.5">
+                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs font-semibold rounded-full ${
+                            ticket.Status === 'Solucionado' ? 'bg-green-100 text-green-800' :
+                            ticket.Status === 'Fechado' ? 'bg-gray-100 text-gray-800' :
+                            'bg-blue-100 text-blue-800'
+                          }`}>
+                            {ticket.Status}
+                          </span>
+                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs font-semibold rounded-full ${
+                            ticket.Prioridade === 'Alta' ? 'bg-red-100 text-red-800' :
+                            ticket.Prioridade === 'Média' ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-green-100 text-green-800'
+                          }`}>
+                            {ticket.Prioridade}
+                          </span>
+                        </div>
+                      </div>
+                      <h3 className="font-medium text-gray-900 mb-1 line-clamp-2">{ticket.Título}</h3>
+                      {ticket['Requerente - Requerente'] && (
+                        <p className="text-xs text-gray-600 truncate">
+                          Por: {ticket['Requerente - Requerente']}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center justify-between pt-2 border-t border-gray-200">
+                    <span className="text-xs text-gray-600">
+                      {ticket['Data de abertura']}
+                    </span>
+                    <button
+                      onClick={() => handleViewTicket(ticket)}
+                      className="flex items-center space-x-1 px-3 py-1 bg-primary-100 text-primary-700 rounded-lg hover:bg-primary-200 transition-colors text-sm"
+                    >
+                      <Star className="h-3 w-3" />
+                      <span>Analisar</span>
+                    </button>
+                  </div>
+                </div>
+              ))}
+          </div>
+
+          {/* Tabela Desktop */}
+          <div className="hidden lg:block overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">#</th>
+                    <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Título</th>
+                    <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Info</th>
+                    <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Requerente</th>
+                    <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Data</th>
+                    <th className="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase">Ações</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {categoryStats
+                    .find(cat => cat.name === selectedCategory)
+                    ?.tickets.map((ticket, index) => (
+                      <tr key={index} className="hover:bg-gray-50">
+                        <td className="px-3 py-3 text-sm font-bold text-blue-600">
+                          {ticket.ID}
+                        </td>
+                        <td className="px-3 py-3 text-sm text-gray-900">
+                          <div className="max-w-xs">
+                            <span className="font-medium truncate block" title={ticket.Título}>
+                              {ticket.Título}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-3 py-3">
+                          <div className="flex flex-wrap gap-1">
+                            <span className={`inline-flex px-1.5 py-0.5 text-xs font-semibold rounded-full ${
+                              ticket.Status === 'Solucionado' ? 'bg-green-100 text-green-800' :
+                              ticket.Status === 'Fechado' ? 'bg-gray-100 text-gray-800' :
+                              'bg-blue-100 text-blue-800'
+                            }`}>
+                              {ticket.Status}
+                            </span>
+                            <span className={`inline-flex px-1.5 py-0.5 text-xs font-semibold rounded-full ${
+                              ticket.Prioridade === 'Alta' ? 'bg-red-100 text-red-800' :
+                              ticket.Prioridade === 'Média' ? 'bg-yellow-100 text-yellow-800' :
+                              'bg-green-100 text-green-800'
+                            }`}>
+                              {ticket.Prioridade}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-3 py-3 text-sm text-gray-900">
+                          <span className="truncate max-w-[150px] block" title={ticket['Requerente - Requerente']}>
+                            {ticket['Requerente - Requerente']}
+                          </span>
+                        </td>
+                        <td className="px-3 py-3 text-sm text-gray-900 whitespace-nowrap">
+                          {ticket['Data de abertura']?.split(' ')[0] || ticket['Data de abertura']}
+                        </td>
+                        <td className="px-3 py-3 text-center">
+                          <button
+                            onClick={() => handleViewTicket(ticket)}
+                            className="flex items-center space-x-1 px-2.5 py-1 bg-primary-100 text-primary-700 rounded-lg hover:bg-primary-200 transition-colors text-sm mx-auto"
+                          >
+                            <Star className="h-3 w-3" />
+                            <span className="hidden xl:inline">Analisar</span>
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       )}

@@ -132,7 +132,22 @@ const TicketTable = ({ data, filterMode = 'none', initialSearchTerm = '' }) => {
   }
 
   const handleViewDetails = (ticket) => {
-    setSelectedTicket(ticket)
+    if (!ticket) {
+      console.error('Ticket não encontrado')
+      return
+    }
+    
+    // Tentar encontrar o ticket completo no array original de dados
+    const fullTicket = data.find(t => t.ID === ticket.ID || t.id === ticket.ID || t['ID'] === ticket.ID) || ticket
+    
+    // Garantir que estamos passando uma cópia completa do objeto ticket com todos os campos
+    const ticketCopy = { ...fullTicket }
+    
+    console.log('Abrindo detalhes do ticket ID:', ticketCopy.ID || ticketCopy.id)
+    console.log('Ticket completo:', ticketCopy)
+    console.log('Campos do ticket:', Object.keys(ticketCopy))
+    
+    setSelectedTicket(ticketCopy)
     setIsDetailsOpen(true)
   }
 
@@ -406,175 +421,238 @@ const TicketTable = ({ data, filterMode = 'none', initialSearchTerm = '' }) => {
         </div>
       </div>
 
-      {/* Tabela */}
-      <div className="overflow-x-auto rounded-lg border border-gray-700/50 shadow-soft">
-        <table className="min-w-full divide-y divide-gray-700/50">
-          <thead className="bg-gradient-to-r from-gray-800 to-gray-800/80 backdrop-blur-sm">
-            <tr>
-              <th
-                onClick={() => handleSort('ID')}
-                className="px-4 py-4 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-700/50 transition-colors sticky left-0 bg-gradient-to-r from-gray-800 to-gray-800/80 z-10"
+      {/* Visualização em Cards (Mobile/Tablet) */}
+      <div className="lg:hidden space-y-3">
+        {currentData.length === 0 ? (
+          <div className="text-center py-12 bg-gray-800/50 rounded-lg border border-gray-700/50">
+            <Filter className="h-12 w-12 text-gray-600 mx-auto mb-3" />
+            <p className="text-gray-400 font-medium">Nenhum chamado encontrado</p>
+            <p className="text-gray-500 text-sm">Tente ajustar os filtros de busca</p>
+          </div>
+        ) : (
+          currentData.map((ticket, index) => {
+            const timeElapsed = getTimeElapsed(ticket['Data de abertura'])
+            const technician = ticket['Técnico responsável'] || ticket['Atribuído - Técnico'] || 'Não atribuído'
+            const category = ticket.Categoria || ticket['Motivo'] || 'Não categorizado'
+            
+            return (
+              <div
+                key={index}
+                className="bg-gray-800/50 rounded-lg border border-gray-700/50 p-4 hover:bg-gray-800/70 transition-colors"
               >
-                <div className="flex items-center gap-2">
-                  <span>#</span>
-                  {sortColumn === 'ID' && (
-                    <span className="text-blue-400">
-                      {sortDirection === 'asc' ? '↑' : '↓'}
-                    </span>
-                  )}
-                </div>
-              </th>
-              <th
-                onClick={() => handleSort('Título')}
-                className="px-4 py-4 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-700/50 transition-colors min-w-[200px]"
-              >
-                <div className="flex items-center gap-2">
-                  <span>Título</span>
-                  {sortColumn === 'Título' && (
-                    <span className="text-blue-400">
-                      {sortDirection === 'asc' ? '↑' : '↓'}
-                    </span>
-                  )}
-                </div>
-              </th>
-              <th className="px-4 py-4 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider">
-                <div className="flex items-center gap-2">
-                  <Tag className="h-3.5 w-3.5" />
-                  <span>Categoria</span>
-                </div>
-              </th>
-              <th className="px-4 py-4 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider">
-                Status
-              </th>
-              <th className="px-4 py-4 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider">
-                Prioridade
-              </th>
-              <th className="px-4 py-4 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider">
-                <div className="flex items-center gap-2">
-                  <User className="h-3.5 w-3.5" />
-                  <span>Técnico</span>
-                </div>
-              </th>
-              <th
-                onClick={() => handleSort('Data de abertura')}
-                className="px-4 py-4 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-700/50 transition-colors"
-              >
-                <div className="flex items-center gap-2">
-                  <Calendar className="h-3.5 w-3.5" />
-                  <span>Data</span>
-                  {sortColumn === 'Data de abertura' && (
-                    <span className="text-blue-400">
-                      {sortDirection === 'asc' ? '↑' : '↓'}
-                    </span>
-                  )}
-                </div>
-              </th>
-              <th className="px-4 py-4 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider">
-                <div className="flex items-center gap-2">
-                  <Clock className="h-3.5 w-3.5" />
-                  <span>SLA</span>
-                </div>
-              </th>
-              <th className="px-4 py-4 text-center text-xs font-semibold text-gray-300 uppercase tracking-wider">
-                Ações
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-gray-900/50 divide-y divide-gray-700/30">
-            {currentData.length === 0 ? (
-              <tr>
-                <td colSpan="9" className="px-4 py-12 text-center">
-                  <div className="flex flex-col items-center gap-3">
-                    <Filter className="h-12 w-12 text-gray-600" />
-                    <p className="text-gray-400 font-medium">Nenhum chamado encontrado</p>
-                    <p className="text-gray-500 text-sm">Tente ajustar os filtros de busca</p>
-                  </div>
-                </td>
-              </tr>
-            ) : (
-              currentData.map((ticket, index) => {
-                const timeElapsed = getTimeElapsed(ticket['Data de abertura'])
-                const technician = ticket['Técnico responsável'] || ticket['Atribuído - Técnico'] || 'Não atribuído'
-                const category = ticket.Categoria || ticket['Motivo'] || 'Não categorizado'
-                
-                return (
-                  <tr 
-                    key={index} 
-                    className="hover:bg-gray-800/50 transition-colors group border-b border-gray-700/30"
-                  >
-                    <td className="px-4 py-4 whitespace-nowrap text-sm font-bold text-blue-400 sticky left-0 bg-gray-900/95 group-hover:bg-gray-800/95 z-10 border-r border-gray-700/30">
-                      #{ticket.ID}
-                    </td>
-                    <td className="px-4 py-4 text-sm text-gray-200 min-w-[200px] max-w-md">
-                      <div className="flex flex-col gap-1">
-                        <span className="font-medium text-white truncate" title={ticket.Título}>
-                          {ticket.Título}
+                <div className="flex items-start justify-between gap-3 mb-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-sm font-bold text-blue-400">#{ticket.ID}</span>
+                      <div className="flex flex-wrap gap-1.5">
+                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs font-semibold rounded border ${getStatusColor(ticket.Status)}`}>
+                          {ticket.Status}
                         </span>
-                        {ticket['Requerente - Requerente'] && (
-                          <span className="text-xs text-gray-500 truncate">
-                            Por: {ticket['Requerente - Requerente']}
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-purple-900/20 text-purple-300 rounded-lg text-xs font-medium border border-purple-500/20">
-                        <Tag className="h-3 w-3" />
-                        {category.length > 20 ? `${category.substring(0, 20)}...` : category}
-                      </span>
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold rounded-lg border ${getStatusColor(ticket.Status)}`}>
-                        {ticket.Status}
-                      </span>
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <div className="flex flex-col gap-1">
-                        <span className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg border ${getPriorityColor(ticket.Prioridade)}`}>
+                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs font-semibold rounded border ${getPriorityColor(ticket.Prioridade)}`}>
                           {ticket.Prioridade}
                         </span>
                       </div>
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <div className="flex items-center gap-2">
-                        <User className="h-3.5 w-3.5 text-gray-500" />
-                        <span className="text-sm text-gray-300 max-w-[120px] truncate" title={technician}>
-                          {technician}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <div className="flex flex-col gap-1">
-                        <span className="text-sm text-gray-300">
-                          {ticket['Data de abertura']?.split(' ')[0] || 'N/A'}
-                        </span>
-                        {timeElapsed && (
-                          <span className="text-xs text-gray-500 flex items-center gap-1">
-                            <TrendingUp className="h-3 w-3" />
-                            {timeElapsed}
+                    </div>
+                    <h3 className="font-medium text-white mb-1 line-clamp-2">{ticket.Título}</h3>
+                    {ticket['Requerente - Requerente'] && (
+                      <p className="text-xs text-gray-400 truncate">
+                        Por: {ticket['Requerente - Requerente']}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                
+                <div className="flex flex-wrap items-center gap-2 mb-3">
+                  <span className="inline-flex items-center gap-1 px-2 py-1 bg-purple-900/20 text-purple-300 rounded text-xs font-medium border border-purple-500/20">
+                    <Tag className="h-3 w-3" />
+                    <span className="truncate max-w-[120px]">{category}</span>
+                  </span>
+                  <div className="flex items-center gap-1 text-xs text-gray-400">
+                    <User className="h-3 w-3" />
+                    <span className="truncate max-w-[100px]" title={technician}>{technician}</span>
+                  </div>
+                  <div className="flex items-center gap-1 text-xs text-gray-400">
+                    <Calendar className="h-3 w-3" />
+                    <span>{ticket['Data de abertura']?.split(' ')[0] || 'N/A'}</span>
+                  </div>
+                  {getSLAStatus(ticket)}
+                </div>
+                
+                <div className="flex justify-end pt-2 border-t border-gray-700/50">
+                  <button
+                    onClick={() => handleViewDetails(ticket)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600/20 text-blue-400 rounded-lg hover:bg-blue-600/30 hover:text-blue-300 transition-all duration-200 text-sm font-medium border border-blue-500/20"
+                  >
+                    <Eye className="h-4 w-4" />
+                    <span>Detalhes</span>
+                  </button>
+                </div>
+              </div>
+            )
+          })
+        )}
+      </div>
+
+      {/* Tabela Desktop (oculta em mobile) */}
+      <div className="hidden lg:block overflow-hidden rounded-lg border border-gray-700/50 shadow-soft">
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-700/50">
+            <thead className="bg-gradient-to-r from-gray-800 to-gray-800/80 backdrop-blur-sm">
+              <tr>
+                <th
+                  onClick={() => handleSort('ID')}
+                  className="px-3 py-3 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-700/50 transition-colors"
+                >
+                  <div className="flex items-center gap-1">
+                    <span>#</span>
+                    {sortColumn === 'ID' && (
+                      <span className="text-blue-400 text-xs">
+                        {sortDirection === 'asc' ? '↑' : '↓'}
+                      </span>
+                    )}
+                  </div>
+                </th>
+                <th
+                  onClick={() => handleSort('Título')}
+                  className="px-3 py-3 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-700/50 transition-colors"
+                >
+                  <div className="flex items-center gap-1">
+                    <span>Título</span>
+                    {sortColumn === 'Título' && (
+                      <span className="text-blue-400 text-xs">
+                        {sortDirection === 'asc' ? '↑' : '↓'}
+                      </span>
+                    )}
+                  </div>
+                </th>
+                <th className="px-3 py-3 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider">
+                  <div className="flex items-center gap-1">
+                    <Tag className="h-3 w-3" />
+                    <span>Info</span>
+                  </div>
+                </th>
+                <th className="px-3 py-3 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider">
+                  <div className="flex items-center gap-1">
+                    <User className="h-3 w-3" />
+                    <span>Responsável</span>
+                  </div>
+                </th>
+                <th
+                  onClick={() => handleSort('Data de abertura')}
+                  className="px-3 py-3 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-700/50 transition-colors"
+                >
+                  <div className="flex items-center gap-1">
+                    <Calendar className="h-3 w-3" />
+                    <span>Data/SLA</span>
+                    {sortColumn === 'Data de abertura' && (
+                      <span className="text-blue-400 text-xs">
+                        {sortDirection === 'asc' ? '↑' : '↓'}
+                      </span>
+                    )}
+                  </div>
+                </th>
+                <th className="px-3 py-3 text-center text-xs font-semibold text-gray-300 uppercase tracking-wider">
+                  Ações
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-gray-900/50 divide-y divide-gray-700/30">
+              {currentData.length === 0 ? (
+                <tr>
+                  <td colSpan="6" className="px-4 py-12 text-center">
+                    <div className="flex flex-col items-center gap-3">
+                      <Filter className="h-12 w-12 text-gray-600" />
+                      <p className="text-gray-400 font-medium">Nenhum chamado encontrado</p>
+                      <p className="text-gray-500 text-sm">Tente ajustar os filtros de busca</p>
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                currentData.map((ticket, index) => {
+                  const timeElapsed = getTimeElapsed(ticket['Data de abertura'])
+                  const technician = ticket['Técnico responsável'] || ticket['Atribuído - Técnico'] || 'Não atribuído'
+                  const category = ticket.Categoria || ticket['Motivo'] || 'Não categorizado'
+                  
+                  return (
+                    <tr 
+                      key={index} 
+                      className="hover:bg-gray-800/50 transition-colors group border-b border-gray-700/30"
+                    >
+                      <td className="px-3 py-3 whitespace-nowrap text-sm font-bold text-blue-400">
+                        #{ticket.ID}
+                      </td>
+                      <td className="px-3 py-3 text-sm text-gray-200">
+                        <div className="flex flex-col gap-1 max-w-xs">
+                          <span className="font-medium text-white truncate" title={ticket.Título}>
+                            {ticket.Título}
                           </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      {getSLAStatus(ticket)}
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <button
-                        onClick={() => handleViewDetails(ticket)}
-                        className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600/20 text-blue-400 rounded-lg hover:bg-blue-600/30 hover:text-blue-300 transition-all duration-200 text-sm font-medium border border-blue-500/20 hover:border-blue-500/40 hover:scale-105 active:scale-95"
-                        title="Ver detalhes completos"
-                      >
-                        <Eye className="h-4 w-4" />
-                        <span className="hidden sm:inline">Detalhes</span>
-                      </button>
-                    </td>
-                  </tr>
-                )
-              })
-            )}
-          </tbody>
-        </table>
+                          {ticket['Requerente - Requerente'] && (
+                            <span className="text-xs text-gray-500 truncate">
+                              Por: {ticket['Requerente - Requerente']}
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-3 py-3">
+                        <div className="flex flex-col gap-1.5">
+                          <div className="flex flex-wrap gap-1">
+                            <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 text-xs font-semibold rounded border ${getStatusColor(ticket.Status)}`}>
+                              {ticket.Status}
+                            </span>
+                            <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 text-xs font-semibold rounded border ${getPriorityColor(ticket.Prioridade)}`}>
+                              {ticket.Prioridade}
+                            </span>
+                          </div>
+                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-purple-900/20 text-purple-300 rounded text-xs font-medium border border-purple-500/20 max-w-fit">
+                            <Tag className="h-2.5 w-2.5" />
+                            <span className="truncate max-w-[150px]" title={category}>
+                              {category}
+                            </span>
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-3 py-3">
+                        <div className="flex items-center gap-1.5">
+                          <User className="h-3.5 w-3.5 text-gray-500 flex-shrink-0" />
+                          <span className="text-sm text-gray-300 truncate max-w-[140px]" title={technician}>
+                            {technician}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-3 py-3">
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-1.5 text-xs text-gray-300">
+                            <Calendar className="h-3 w-3 flex-shrink-0" />
+                            <span className="whitespace-nowrap">{ticket['Data de abertura']?.split(' ')[0] || 'N/A'}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            {getSLAStatus(ticket)}
+                          </div>
+                          {timeElapsed && (
+                            <span className="text-xs text-gray-500 flex items-center gap-1">
+                              <TrendingUp className="h-2.5 w-2.5" />
+                              {timeElapsed}
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-3 py-3 whitespace-nowrap text-center">
+                        <button
+                          onClick={() => handleViewDetails(ticket)}
+                          className="flex items-center gap-1 px-2.5 py-1.5 bg-blue-600/20 text-blue-400 rounded-lg hover:bg-blue-600/30 hover:text-blue-300 transition-all duration-200 text-xs font-medium border border-blue-500/20 hover:border-blue-500/40 hover:scale-105 active:scale-95 mx-auto"
+                          title="Ver detalhes completos"
+                        >
+                          <Eye className="h-4 w-4" />
+                          <span className="hidden xl:inline">Detalhes</span>
+                        </button>
+                      </td>
+                    </tr>
+                  )
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Paginação */}
