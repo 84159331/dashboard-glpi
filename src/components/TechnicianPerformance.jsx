@@ -21,11 +21,54 @@ const TechnicianPerformance = ({ data }) => {
   const [selectedTechnician, setSelectedTechnician] = useState(null)
   const [timeRange, setTimeRange] = useState('all') // 'week', 'month', 'quarter', 'year', 'all'
   const [visibleWidgets, setVisibleWidgets] = useState(null) // null = todos visíveis
+  const [hasError, setHasError] = useState(false)
+  const [errorMessage, setErrorMessage] = useState(null)
+
+  // Validação de dados
+  if (!data || !Array.isArray(data) || data.length === 0) {
+    return (
+      <div className="space-y-6 animate-fade-in">
+        <div className="bg-yellow-500/20 border border-yellow-500/30 rounded-xl p-6">
+          <div className="text-center">
+            <AlertTriangle className="h-12 w-12 text-yellow-400 mx-auto mb-4" />
+            <h3 className="text-xl font-bold text-white mb-2">Nenhum dado disponível</h3>
+            <p className="text-gray-300">Carregue um arquivo CSV com dados de chamados para usar esta funcionalidade.</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Se houver erro, mostrar mensagem
+  if (hasError) {
+    return (
+      <div className="space-y-6 animate-fade-in">
+        <div className="bg-red-500/20 border border-red-500/30 rounded-xl p-6">
+          <div className="text-center">
+            <AlertTriangle className="h-12 w-12 text-red-400 mx-auto mb-4" />
+            <h3 className="text-xl font-bold text-white mb-2">Erro ao carregar dados</h3>
+            <p className="text-gray-300 mb-4">{errorMessage || 'Ocorreu um erro inesperado.'}</p>
+            <button
+              onClick={() => {
+                setHasError(false)
+                setErrorMessage(null)
+              }}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all"
+            >
+              Tentar Novamente
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   // Obter lista única de técnicos
   const technicians = useMemo(() => {
+    if (!data || !Array.isArray(data)) return []
     const techSet = new Set()
     data.forEach(ticket => {
+      if (!ticket || typeof ticket !== 'object') return
       const tech = ticket['Técnico responsável'] || ticket['Atribuído - Técnico'] || ticket.assignedTo
       if (tech && tech !== 'Não atribuído' && tech !== 'Não informado') {
         techSet.add(tech)
@@ -62,9 +105,10 @@ const TechnicianPerformance = ({ data }) => {
 
   // Filtrar tickets por técnico e período
   const technicianTickets = useMemo(() => {
-    if (!selectedTechnician) return []
+    if (!selectedTechnician || !data || !Array.isArray(data)) return []
     
     let filtered = data.filter(ticket => {
+      if (!ticket || typeof ticket !== 'object') return false
       const tech = ticket['Técnico responsável'] || ticket['Atribuído - Técnico'] || ticket.assignedTo
       return tech === selectedTechnician
     })
@@ -230,10 +274,11 @@ const TechnicianPerformance = ({ data }) => {
 
   // Calcular estatísticas da equipe para comparação
   const teamStats = useMemo(() => {
-    if (!selectedTechnician) return null
+    if (!selectedTechnician || !data || !Array.isArray(data)) return null
 
     // Estatísticas gerais da equipe (excluindo o técnico selecionado)
     const teamTickets = data.filter(ticket => {
+      if (!ticket || typeof ticket !== 'object') return false
       const tech = ticket['Técnico responsável'] || ticket['Atribuído - Técnico'] || ticket.assignedTo
       return tech && tech !== selectedTechnician && tech !== 'Não atribuído' && tech !== 'Não informado'
     })
@@ -1170,43 +1215,49 @@ const TechnicianPerformance = ({ data }) => {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Gráfico Radar */}
                 <div className="bg-gray-900/50 rounded-lg p-4">
-                  <ResponsiveContainer width="100%" height={400}>
-                    <RadarChart data={chartData.radar}>
-                      <PolarGrid stroke="#374151" />
-                      <PolarAngleAxis 
-                        dataKey="category" 
-                        tick={{ fill: '#9ca3af', fontSize: 12 }}
-                      />
-                      <PolarRadiusAxis 
-                        angle={90} 
-                        domain={[0, 100]} 
-                        tick={{ fill: '#9ca3af', fontSize: 10 }}
-                      />
-                      <Radar
-                        name="Compliance"
-                        dataKey="compliance"
-                        stroke="#3b82f6"
-                        fill="#3b82f6"
-                        fillOpacity={0.6}
-                      />
-                      <Radar
-                        name="Eficiência"
-                        dataKey="efficiency"
-                        stroke="#10b981"
-                        fill="#10b981"
-                        fillOpacity={0.4}
-                      />
-                      <Tooltip
-                        contentStyle={{
-                          backgroundColor: '#1f2937',
-                          border: '1px solid #374151',
-                          borderRadius: '8px',
-                          color: '#fff'
-                        }}
-                      />
-                      <Legend />
-                    </RadarChart>
-                  </ResponsiveContainer>
+                  {chartData.radar && chartData.radar.length > 0 ? (
+                    <ResponsiveContainer width="100%" height={400}>
+                      <RadarChart data={chartData.radar}>
+                        <PolarGrid stroke="#374151" />
+                        <PolarAngleAxis 
+                          dataKey="category" 
+                          tick={{ fill: '#9ca3af', fontSize: 12 }}
+                        />
+                        <PolarRadiusAxis 
+                          angle={90} 
+                          domain={[0, 100]}
+                          tick={{ fill: '#9ca3af', fontSize: 10 }}
+                        />
+                        <Radar
+                          name="Compliance"
+                          dataKey="compliance"
+                          stroke="#3b82f6"
+                          fill="#3b82f6"
+                          fillOpacity={0.6}
+                        />
+                        <Radar
+                          name="Eficiência"
+                          dataKey="efficiency"
+                          stroke="#10b981"
+                          fill="#10b981"
+                          fillOpacity={0.4}
+                        />
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: '#1f2937',
+                            border: '1px solid #374151',
+                            borderRadius: '8px',
+                            color: '#fff'
+                          }}
+                        />
+                        <Legend />
+                      </RadarChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="flex items-center justify-center h-96 text-gray-400">
+                      <p>Dados insuficientes para o gráfico radar</p>
+                    </div>
+                  )}
                 </div>
 
                 {/* Legenda e Detalhes */}

@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react'
-import { Heart, Coffee, Moon, AlertCircle, TrendingUp, Activity, Battery, Zap } from 'lucide-react'
+import { Heart, Coffee, Moon, AlertCircle, TrendingUp, Activity, Battery, Zap, Clock } from 'lucide-react'
 
 const WellnessMonitor = ({ technicianTickets, technicianStats, historicalData }) => {
   const wellnessMetrics = useMemo(() => {

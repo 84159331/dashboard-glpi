@@ -7,6 +7,7 @@ import CategoryAnalysis from './CategoryAnalysis'
 import EvaluationSummary from './EvaluationSummary'
 import TechnicianPerformance from './TechnicianPerformance'
 import Breadcrumbs from './Breadcrumbs'
+import ErrorBoundary from './ErrorBoundary'
 
 const Dashboard = ({ data, columns, onReset }) => {
   const [chartType, setChartType] = useState('status')
@@ -60,7 +61,11 @@ const Dashboard = ({ data, columns, onReset }) => {
           />
         )
       case 'performance':
-        return <TechnicianPerformance data={data} />
+        return (
+          <ErrorBoundary>
+            <TechnicianPerformance data={data} />
+          </ErrorBoundary>
+        )
       default:
         return <TicketStats data={data} />
     }

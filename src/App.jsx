@@ -5,6 +5,7 @@ import Header from './components/Header'
 import CoreplanIntegration from './components/CoreplanIntegration'
 import { useNotifications, NotificationContainer } from './components/Notification'
 import LoadingSpinner from './components/LoadingSpinner'
+import ErrorBoundary from './components/ErrorBoundary'
 
 function App() {
   const [data, setData] = useState(null)
