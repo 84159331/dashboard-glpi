@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { ArrowLeft, BarChart3, Database, Headphones, Activity, Bell, Settings } from 'lucide-react'
+import { ArrowLeft, BarChart3, Headphones, Activity, Bell, Settings } from 'lucide-react'
 import ThemeToggle from './ThemeToggle'
 
 const Header = ({ onHomeClick, onViewChange, currentView }) => {
@@ -57,17 +57,6 @@ const Header = ({ onHomeClick, onViewChange, currentView }) => {
               </button>
             </div>
             
-            <div className="hidden lg:flex items-center space-x-3">
-              <Database className="h-5 w-5 text-gray-400" />
-              <button 
-                onClick={() => onViewChange('integration')}
-                className={`text-base md:text-lg font-bold transition-colors duration-300 whitespace-nowrap ${
-                  currentView === 'integration' ? 'text-blue-400' : 'text-white hover:text-blue-400'
-                }`}
-              >
-                Integração GLPI
-              </button>
-            </div>
           </div>
           
           {/* Menu Mobile */}
@@ -83,16 +72,6 @@ const Header = ({ onHomeClick, onViewChange, currentView }) => {
               >
                 SLA
               </button>
-              <button 
-                onClick={() => onViewChange('integration')}
-                className={`px-3 py-1.5 text-sm font-semibold rounded-lg transition-all duration-300 ${
-                  currentView === 'integration' 
-                    ? 'bg-blue-600 text-white shadow-glow' 
-                    : 'bg-gray-700/50 text-gray-300 hover:bg-gray-700'
-                }`}
-              >
-                GLPI
-              </button>
             </div>
           </div>
 
@@ -105,10 +84,6 @@ const Header = ({ onHomeClick, onViewChange, currentView }) => {
                 <span className="text-xs text-green-300 font-medium hidden 2xl:inline">Sistema Online</span>
               </div>
               
-              <div className="flex items-center space-x-1.5 px-2 py-1.5 bg-blue-500/20 rounded-lg border border-blue-400/30">
-                <Database className="h-3.5 w-3.5 text-blue-400" />
-                <span className="text-xs text-blue-300 font-medium hidden 2xl:inline">GLPI Conectado</span>
-              </div>
             </div>
 
             {/* Data e Hora */}

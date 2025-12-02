@@ -80,11 +80,6 @@ const CSVUploader = ({ onDataLoaded }) => {
     })
   }
 
-  // Debug - remover em produção se necessário
-  if (typeof window !== 'undefined') {
-    console.log('CSVUploader renderizado')
-  }
-
   return (
     <div className="max-w-4xl mx-auto space-y-6 md:space-y-8 px-4 py-4" style={{ minHeight: '60vh' }}>
       {/* Header */}

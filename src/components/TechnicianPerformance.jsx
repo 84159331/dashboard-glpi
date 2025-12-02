@@ -5,7 +5,7 @@ import {
   Users, Calendar, Star, Lightbulb, Minus, ArrowUp, ArrowDown,
   PieChart, Gauge, Percent, Sparkles, Gift
 } from 'lucide-react'
-import { LineChart as RechartsLineChart, Line, BarChart, Bar, PieChart as RechartsPieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from 'recharts'
+import { LineChart as RechartsLineChart, Line, BarChart as RechartsBarChart, Bar, PieChart as RechartsPieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from 'recharts'
 import GamificationService, { BADGES, LEVELS } from '../services/GamificationService'
 import IntelligentAlerts from './IntelligentAlerts'
 import PerformanceReport from './PerformanceReport'
@@ -461,13 +461,18 @@ const TechnicianPerformance = ({ data }) => {
     const xpEarned = GamificationService.calculateXP(xpData)
     
     // Total XP (salvo + novo)
-    const totalXP = savedProgress.totalXP + xpEarned
+    const totalXP = (savedProgress?.totalXP ?? 0) + (xpEarned ?? 0)
     
-    // Obter nível atual
-    const currentLevel = GamificationService.getCurrentLevel(totalXP)
+    // Obter nível atual - garantir valor padrão
+    const currentLevel = GamificationService.getCurrentLevel(totalXP) || LEVELS[0]
     
-    // Progresso para próximo nível
-    const levelProgress = GamificationService.getLevelProgress(totalXP, currentLevel)
+    // Progresso para próximo nível - garantir que sempre retorne valores válidos
+    const levelProgress = GamificationService.getLevelProgress(totalXP, currentLevel) || {
+      progress: 0,
+      xpNeeded: 0,
+      xpInLevel: 0,
+      xpNeededForNext: 100
+    }
     
     // Verificar badges
     const newBadges = GamificationService.checkBadges(
@@ -482,13 +487,15 @@ const TechnicianPerformance = ({ data }) => {
       null // histórico (pode ser expandido depois)
     )
     
-    // Filtrar badges já concedidas
-    const existingBadgeIds = savedProgress.badges.map(b => b.id)
-    const earnedBadges = newBadges.filter(b => !existingBadgeIds.includes(b.id))
+    // Filtrar badges já concedidas - garantir que savedProgress.badges seja array
+    const existingBadges = Array.isArray(savedProgress?.badges) ? savedProgress.badges : []
+    const existingBadgeIds = existingBadges.map(b => b?.id).filter(Boolean)
+    const earnedBadges = (newBadges || []).filter(b => b && !existingBadgeIds.includes(b.id))
     
     // Combinar badges antigas e novas
     const allBadges = [
-      ...savedProgress.badges.map(saved => {
+      ...existingBadges.map(saved => {
+        if (!saved || !saved.id) return null
         const badgeInfo = Object.values(BADGES).find(b => b.id === saved.id)
         return badgeInfo ? { ...badgeInfo, earnedDate: saved.earnedDate } : null
       }).filter(Boolean),
@@ -840,7 +847,7 @@ const TechnicianPerformance = ({ data }) => {
                     <div className="text-right">
                       <p className="text-sm text-gray-400 mb-1">Total de XP</p>
                       <p className="text-2xl font-bold text-yellow-400">
-                        {gamification.totalXP.toLocaleString('pt-BR')}
+                        {(gamification.totalXP ?? 0).toLocaleString('pt-BR')}
                       </p>
                       {gamification.xpEarned > 0 && (
                         <p className="text-xs text-green-400 mt-1 flex items-center gap-1">
@@ -854,26 +861,26 @@ const TechnicianPerformance = ({ data }) => {
                   {/* Barra de Progresso do Nível */}
                   <div className="mb-2">
                     <div className="flex items-center justify-between text-xs text-gray-400 mb-2">
-                      <span>Progresso para Nível {gamification.currentLevel.level + 1}</span>
+                      <span>Progresso para Nível {gamification.currentLevel?.level ? gamification.currentLevel.level + 1 : '?'}</span>
                       <span>
-                        {gamification.levelProgress.xpInLevel.toLocaleString('pt-BR')} / {gamification.levelProgress.xpNeededForNext.toLocaleString('pt-BR')} XP
+                        {(gamification.levelProgress?.xpInLevel ?? 0).toLocaleString('pt-BR')} / {(gamification.levelProgress?.xpNeededForNext ?? 0).toLocaleString('pt-BR')} XP
                       </span>
                     </div>
                     <div className="w-full bg-gray-700/50 rounded-full h-4 overflow-hidden">
                       <div
                         className="bg-gradient-to-r from-yellow-500 via-orange-500 to-pink-500 h-4 rounded-full transition-all duration-500 flex items-center justify-end pr-2"
-                        style={{ width: `${gamification.levelProgress.progress}%` }}
+                        style={{ width: `${Math.min(gamification.levelProgress?.progress ?? 0, 100)}%` }}
                       >
-                        {gamification.levelProgress.progress > 15 && (
+                        {(gamification.levelProgress?.progress ?? 0) > 15 && (
                           <span className="text-xs font-bold text-white">
-                            {gamification.levelProgress.progress.toFixed(0)}%
+                            {Math.round(gamification.levelProgress?.progress ?? 0)}%
                           </span>
                         )}
                       </div>
                     </div>
-                    {gamification.levelProgress.xpNeeded > 0 && (
+                    {(gamification.levelProgress?.xpNeeded ?? 0) > 0 && (
                       <p className="text-xs text-gray-400 mt-2">
-                        Faltam {gamification.levelProgress.xpNeeded.toLocaleString('pt-BR')} XP para o próximo nível
+                        Faltam {(gamification.levelProgress?.xpNeeded ?? 0).toLocaleString('pt-BR')} XP para o próximo nível
                       </p>
                     )}
                   </div>

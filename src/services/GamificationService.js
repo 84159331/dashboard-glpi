@@ -146,18 +146,34 @@ class GamificationService {
   
   // Calcular progresso para próximo nível
   static getLevelProgress(totalXP, currentLevel) {
+    if (!currentLevel || !totalXP) {
+      return { 
+        progress: 0, 
+        xpNeeded: 0, 
+        xpInLevel: 0, 
+        xpNeededForNext: 100 
+      }
+    }
+
     const nextLevel = LEVELS.find(l => l.level === currentLevel.level + 1)
     if (!nextLevel) {
-      return { progress: 100, xpNeeded: 0, xpInLevel: 0 }
+      // Nível máximo alcançado
+      return { 
+        progress: 100, 
+        xpNeeded: 0, 
+        xpInLevel: totalXP - currentLevel.xpRequired,
+        xpNeededForNext: 0 
+      }
     }
     
-    const xpInLevel = totalXP - currentLevel.xpRequired
-    const xpNeededForNext = nextLevel.xpRequired - currentLevel.xpRequired
-    const progress = (xpInLevel / xpNeededForNext) * 100
+    const xpInLevel = Math.max(0, totalXP - currentLevel.xpRequired)
+    const xpNeededForNext = Math.max(1, nextLevel.xpRequired - currentLevel.xpRequired)
+    const progress = Math.min(100, Math.max(0, (xpInLevel / xpNeededForNext) * 100))
+    const xpNeeded = Math.max(0, nextLevel.xpRequired - totalXP)
     
     return {
-      progress: Math.min(progress, 100),
-      xpNeeded: nextLevel.xpRequired - totalXP,
+      progress: progress,
+      xpNeeded: xpNeeded,
       xpInLevel: xpInLevel,
       xpNeededForNext: xpNeededForNext
     }

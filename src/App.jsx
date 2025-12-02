@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react'
 import CSVUploader from './components/CSVUploader'
 import Dashboard from './components/Dashboard'
 import Header from './components/Header'
-import CoreplanIntegration from './components/CoreplanIntegration'
 import { useNotifications, NotificationContainer } from './components/Notification'
 import LoadingSpinner from './components/LoadingSpinner'
 import ErrorBoundary from './components/ErrorBoundary'
@@ -11,7 +10,7 @@ function App() {
   const [data, setData] = useState(null)
   const [columns, setColumns] = useState([])
   const [isLoading, setIsLoading] = useState(false)
-  const [currentView, setCurrentView] = useState('upload') // 'upload', 'dashboard', 'integration'
+  const [currentView, setCurrentView] = useState('upload') // 'upload', 'dashboard'
   const { notifications, addNotification, removeNotification } = useNotifications()
 
   const handleDataLoaded = (parsedData, columnNames) => {
@@ -55,9 +54,9 @@ function App() {
     }
   }
 
-  // Garantir que quando não há dados, sempre mostre o uploader (exceto se estiver em integration)
+  // Garantir que quando não há dados, sempre mostre o uploader
   useEffect(() => {
-    if (!data && currentView !== 'integration') {
+    if (!data) {
       setCurrentView('upload')
     }
   }, [data])
@@ -86,10 +85,6 @@ function App() {
               text="Processando dados..." 
               variant="primary" 
             />
-          </div>
-        ) : currentView === 'integration' ? (
-          <div className="animate-fade-in">
-            <CoreplanIntegration />
           </div>
         ) : !data || data.length === 0 ? (
           <div className="animate-fade-in">

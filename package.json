@@ -11,7 +11,9 @@
     "audit": "npm audit",
     "audit:fix": "npm audit fix",
     "security:check": "npm audit && npm outdated",
-    "security:update": "npm audit fix && npm update"
+    "security:update": "npm audit fix && npm update",
+    "deploy": "npm run build && firebase deploy --only hosting",
+    "deploy:preview": "npm run build && firebase hosting:channel:deploy preview"
   },
   "dependencies": {
     "react": "^18.2.0",
