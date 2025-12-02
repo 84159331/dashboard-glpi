@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react'
-import { ChevronLeft, ChevronRight, Search, Filter, Clock, AlertTriangle, Eye, Download, User, Tag, Calendar, TrendingUp, Info } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Search, Filter, Clock, AlertTriangle, Eye, Download, User, Tag, Calendar, TrendingUp, Info, Table, Sparkles, BarChart3 } from 'lucide-react'
 import TicketDetails from './TicketDetails'
 
 // filterMode: 'none' | 'open' | 'all' | 'slaMet' | 'slaExceeded'
@@ -288,7 +288,36 @@ const TicketTable = ({ data, filterMode = 'none', initialSearchTerm = '' }) => {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6 animate-fade-in">
+      {/* Header Modernizado */}
+      <div className="bg-gradient-to-r from-cyan-600/20 via-blue-600/20 to-indigo-600/20 backdrop-blur-sm rounded-xl p-6 md:p-8 border border-cyan-500/30 shadow-glow">
+        <div className="text-center">
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <div className="p-3 bg-gradient-to-br from-cyan-500 to-blue-500 rounded-xl shadow-lg">
+              <Table className="h-8 w-8 text-white" />
+            </div>
+            <h3 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-cyan-400 via-blue-400 to-indigo-400 bg-clip-text text-transparent">
+              Tabela de Chamados
+            </h3>
+          </div>
+          <p className="text-gray-300 text-base md:text-lg max-w-2xl mx-auto">
+            Visualize, filtre e analise todos os chamados com busca avançada e múltiplos filtros
+          </p>
+          {sortedData.length > 0 && (
+            <div className="mt-4 flex items-center justify-center gap-6 text-sm text-gray-400">
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-cyan-400" />
+                <span>{sortedData.length.toLocaleString('pt-BR')} chamados encontrados</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <BarChart3 className="h-4 w-4 text-blue-400" />
+                <span>{Math.ceil(sortedData.length / itemsPerPage)} página{Math.ceil(sortedData.length / itemsPerPage) !== 1 ? 's' : ''}</span>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* Resumo de Filtros */}
       <div className="bg-gray-800/50 backdrop-blur-sm rounded-lg p-4 border border-gray-700/50 mb-4">
         <div className="flex flex-wrap items-center gap-4 text-sm">
