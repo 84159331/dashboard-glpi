@@ -1,15 +1,16 @@
 import React, { useState, useMemo } from 'react'
-import { RotateCcw, Download, Filter, BarChart3, Table, PieChart, FolderOpen, Star } from 'lucide-react'
+import { RotateCcw, Download, Filter, BarChart3, Table, PieChart, FolderOpen, Star, User } from 'lucide-react'
 import TicketTable from './TicketTable'
 import TicketCharts from './TicketCharts'
 import TicketStats from './TicketStats'
 import CategoryAnalysis from './CategoryAnalysis'
 import EvaluationSummary from './EvaluationSummary'
+import TechnicianPerformance from './TechnicianPerformance'
 import Breadcrumbs from './Breadcrumbs'
 
 const Dashboard = ({ data, columns, onReset }) => {
   const [chartType, setChartType] = useState('status')
-  const [viewMode, setViewMode] = useState('stats') // stats, charts, table, category, evaluations
+  const [viewMode, setViewMode] = useState('stats') // stats, charts, table, category, evaluations, performance
   const [tableFilterMode, setTableFilterMode] = useState('none')
   const [tableInitialSearch, setTableInitialSearch] = useState('')
 
@@ -58,6 +59,8 @@ const Dashboard = ({ data, columns, onReset }) => {
             }}
           />
         )
+      case 'performance':
+        return <TechnicianPerformance data={data} />
       default:
         return <TicketStats data={data} />
     }
@@ -72,6 +75,7 @@ const Dashboard = ({ data, columns, onReset }) => {
     if (viewMode === 'table') items.push({ label: 'Tabela de Chamados' })
     if (viewMode === 'category') items.push({ label: 'Análise por Categoria' })
     if (viewMode === 'evaluations') items.push({ label: 'Avaliações' })
+    if (viewMode === 'performance') items.push({ label: 'Análise Individual' })
     
     return items
   }, [viewMode])
@@ -185,6 +189,19 @@ const Dashboard = ({ data, columns, onReset }) => {
                   <span className="hidden sm:inline">Avaliações</span>
                   <span className="sm:hidden">Aval.</span>
                 </button>
+                
+                <button
+                  onClick={() => setViewMode('performance')}
+                  className={`flex items-center justify-center gap-2 px-3 md:px-4 py-2.5 md:py-3 rounded-lg border transition-all duration-300 text-sm md:text-base ${
+                    viewMode === 'performance'
+                      ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white border-purple-600 shadow-glow scale-105'
+                      : 'bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600 hover:scale-105 active:scale-95'
+                  }`}
+                >
+                  <User className="h-4 w-4" />
+                  <span className="hidden sm:inline">Individual</span>
+                  <span className="sm:hidden">Ind.</span>
+                </button>
               </div>
 
               {viewMode === 'charts' && (
@@ -212,6 +229,7 @@ const Dashboard = ({ data, columns, onReset }) => {
                 <p>• <strong>Tabela:</strong> Lista detalhada com busca e filtros</p>
                 <p>• <strong>Por Categoria:</strong> Análise específica por categoria com avaliação</p>
                 <p>• <strong>Avaliações:</strong> Resumo e histórico das avaliações realizadas</p>
+                <p>• <strong>Individual:</strong> Análise detalhada de desempenho por técnico com comparação e recomendações</p>
               </div>
             </div>
           </div>
@@ -241,6 +259,10 @@ const Dashboard = ({ data, columns, onReset }) => {
               <div className="flex items-center space-x-3">
                 <div className="w-2 h-2 bg-pink-500 rounded-full"></div>
                 <span className="text-sm text-gray-300">Histórico de avaliações</span>
+              </div>
+              <div className="flex items-center space-x-3">
+                <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                <span className="text-sm text-gray-300">Análise individual de desempenho</span>
               </div>
             </div>
           </div>
