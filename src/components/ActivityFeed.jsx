@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react'
-import { Activity, Award, TrendingUp, Clock, CheckCircle } from 'lucide-react'
+import { Activity, TrendingUp, Clock, CheckCircle } from 'lucide-react'
 
-const ActivityFeed = ({ technicianName, technicianStats, gamification }) => {
+const ActivityFeed = ({ technicianName, technicianStats, insights }) => {
   const activities = useMemo(() => {
     if (!technicianName || !technicianStats) return []
 
@@ -18,21 +18,6 @@ const ActivityFeed = ({ technicianName, technicianStats, gamification }) => {
         priority: 1
       })
     }
-
-    // Novos badges
-    if (gamification && gamification.newBadges && gamification.newBadges.length > 0) {
-      gamification.newBadges.forEach(badge => {
-        feed.push({
-          type: 'badge',
-          icon: Award,
-          color: 'text-yellow-400',
-          message: `Novo badge desbloqueado: ${badge.name}`,
-          timestamp: badge.earnedDate || new Date().toISOString(),
-          priority: 0
-        })
-      })
-    }
-
 
     // Melhorias de performance
     if (technicianStats.slaCompliance >= 95) {
@@ -51,7 +36,7 @@ const ActivityFeed = ({ technicianName, technicianStats, gamification }) => {
       if (a.priority !== b.priority) return a.priority - b.priority
       return new Date(b.timestamp) - new Date(a.timestamp)
     }).slice(0, 10) // Limitar a 10 atividades mais recentes
-  }, [technicianName, technicianStats, gamification])
+  }, [technicianName, technicianStats, insights])
 
   if (activities.length === 0) {
     return null

@@ -5,19 +5,10 @@ const DashboardCustomizer = ({ technicianName, onLayoutChange, currentLayout }) 
   const [isOpen, setIsOpen] = useState(false)
   const [availableWidgets] = useState([
     { id: 'kpis', name: 'KPIs Principais', defaultVisible: true },
-    { id: 'gamification', name: 'Gamificação e Conquistas', defaultVisible: true },
-    { id: 'alerts', name: 'Alertas Inteligentes', defaultVisible: true },
-    { id: 'predictive', name: 'Análise Preditiva', defaultVisible: true },
-    { id: 'behavioral', name: 'Análise Comportamental', defaultVisible: true },
-    { id: 'goals', name: 'Metas Pessoais', defaultVisible: true },
+    { id: 'insights', name: 'Insights (IA)', defaultVisible: true },
     { id: 'recommendations', name: 'Recomendações', defaultVisible: true },
     { id: 'comparison', name: 'Comparação com Equipe', defaultVisible: true },
-    { id: 'timeline', name: 'Evolução Temporal', defaultVisible: true },
-    { id: 'categories', name: 'Performance por Categoria', defaultVisible: true },
-    { id: 'radar', name: 'Habilidades (Gráfico Radar)', defaultVisible: true },
-    { id: 'wellness', name: 'Monitor de Bem-Estar', defaultVisible: true },
-    { id: 'activity', name: 'Feed de Atividades', defaultVisible: false },
-    { id: 'report', name: 'Relatório Personalizado', defaultVisible: true }
+    { id: 'report', name: 'Relatório Personalizado', defaultVisible: true },
   ])
 
   const [widgets, setWidgets] = useState(() => {

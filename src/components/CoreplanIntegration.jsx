@@ -23,8 +23,8 @@ import {
   EyeOff,
   Trash2
 } from 'lucide-react'
+import Papa from 'papaparse'
 import { useNotifications } from './Notification'
-import GLPIService from '../services/GLPIService'
 
 const CoreplanIntegration = () => {
   const [isConnected, setIsConnected] = useState(false)
@@ -78,11 +78,12 @@ const CoreplanIntegration = () => {
       const saved = localStorage.getItem('coreplan-credentials')
       if (saved) {
         const parsed = JSON.parse(saved)
-        setCredentials(parsed)
-        if (parsed.username && parsed.password) {
-          // Não testar conexão automaticamente para evitar erros na inicialização
-          // O usuário pode testar manualmente
-        }
+        // Nunca restaurar senha/apiKey do storage
+        setCredentials(prev => ({
+          ...prev,
+          baseUrl: parsed.baseUrl || prev.baseUrl,
+          username: parsed.username || ''
+        }))
       }
     } catch (error) {
       console.error('Erro ao carregar credenciais salvas:', error)
@@ -93,7 +94,11 @@ const CoreplanIntegration = () => {
 
   const saveCredentials = () => {
     try {
-      localStorage.setItem('coreplan-credentials', JSON.stringify(credentials))
+      // Salvar apenas dados não sensíveis
+      localStorage.setItem('coreplan-credentials', JSON.stringify({
+        baseUrl: credentials.baseUrl,
+        username: credentials.username
+      }))
       addNotification({
         type: 'success',
         title: 'Credenciais Salvas',
@@ -126,19 +131,28 @@ const CoreplanIntegration = () => {
     setConnectionStatus('testing')
     
     try {
-      // Criar instância do serviço GLPI
-      const service = new GLPIService(credentials.baseUrl, {
-        username: credentials.username,
-        password: credentials.password
+      const response = await fetch('/api/glpi/test', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          baseUrl: credentials.baseUrl,
+          username: credentials.username,
+          password: credentials.password
+        })
       })
-      
-      // Testar conexão
-      const result = await service.testConnection()
+
+      const result = await response.json()
       
       if (result.success) {
         setIsConnected(true)
         setConnectionStatus('connected')
-        setGlpiService(service)
+        setGlpiService({
+          baseUrl: credentials.baseUrl,
+          username: credentials.username,
+          password: credentials.password
+        })
         addNotification({
           type: 'success',
           title: 'Conexão Estabelecida',
@@ -248,8 +262,25 @@ const CoreplanIntegration = () => {
     setIsLoading(true)
     
     try {
-      // Buscar tickets do GLPI
-      const tickets = await glpiService.getTickets()
+      const response = await fetch('/api/glpi/tickets', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          baseUrl: glpiService.baseUrl,
+          username: glpiService.username,
+          password: glpiService.password,
+          range: '0-9999'
+        })
+      })
+
+      const result = await response.json()
+      if (!result.success) {
+        throw new Error(result.error || 'Falha ao buscar tickets')
+      }
+
+      const tickets = result.tickets
       
       if (tickets && Array.isArray(tickets)) {
         const newTicketsFound = tickets.filter(ticket => 
@@ -340,7 +371,25 @@ const CoreplanIntegration = () => {
     }
 
     try {
-      const tickets = await glpiService.getTickets()
+      const response = await fetch('/api/glpi/tickets', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          baseUrl: glpiService.baseUrl,
+          username: glpiService.username,
+          password: glpiService.password,
+          range: '0-9999'
+        })
+      })
+
+      const result = await response.json()
+      if (!result.success) {
+        throw new Error(result.error || 'Falha ao buscar tickets')
+      }
+
+      const tickets = result.tickets
       
       if (!tickets || tickets.length === 0) {
         addNotification({
@@ -351,8 +400,12 @@ const CoreplanIntegration = () => {
         })
         return
       }
-      
-      const csvContent = await glpiService.exportTicketsToCSV(tickets)
+
+      const csvContent = Papa.unparse(tickets, {
+        delimiter: ';',
+        quotes: true,
+        skipEmptyLines: true
+      })
       
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
       const url = URL.createObjectURL(blob)

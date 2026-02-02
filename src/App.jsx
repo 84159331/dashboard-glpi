@@ -15,8 +15,7 @@ function App() {
 
   const handleDataLoaded = (parsedData, columnNames) => {
     setIsLoading(true)
-    
-    // Simular carregamento para mostrar animações
+
     setTimeout(() => {
       setData(parsedData)
       setColumns(columnNames)
@@ -28,7 +27,7 @@ function App() {
         message: `${parsedData.length} registros foram carregados com sucesso.`,
         duration: 3000
       })
-    }, 1500)
+    }, 0)
   }
 
   const handleReset = () => {
@@ -115,6 +114,7 @@ function App() {
       <button 
         className="btn-floating"
         title="Ajuda"
+        aria-label="Ajuda"
         onClick={() => {
           addNotification({
             type: 'info',

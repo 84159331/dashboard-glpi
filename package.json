@@ -12,11 +12,11 @@
     "audit:fix": "npm audit fix",
     "security:check": "npm audit && npm outdated",
     "security:update": "npm audit fix && npm update",
-    "deploy": "npm run build && firebase deploy --only hosting",
+    "deploy": "npm run build && firebase deploy --only hosting,functions",
     "deploy:preview": "npm run build && firebase hosting:channel:deploy preview",
     "deploy:full": "powershell -ExecutionPolicy Bypass -File ./deploy.ps1",
     "deploy:auto": "powershell -ExecutionPolicy Bypass -File ./deploy.ps1",
-    "git:deploy": "git add . && git commit -m \"Deploy automático\" && git push && npm run build && firebase deploy --only hosting"
+    "git:deploy": "git add . && git commit -m \"Deploy automático\" && git push && npm run build && firebase deploy --only hosting,functions"
   },
   "dependencies": {
     "react": "^18.2.0",

@@ -1,21 +1,14 @@
 import React, { useState, useMemo, useEffect } from 'react'
 import {
   User, TrendingUp, TrendingDown, Target, Award, Clock, AlertTriangle,
-  CheckCircle, XCircle, BarChart3, Activity, Zap, Shield, Trophy,
+  CheckCircle, XCircle, BarChart3, Activity, Zap, Shield,
   Users, Calendar, Star, Lightbulb, Minus, ArrowUp, ArrowDown,
-  PieChart, Gauge, Percent, Sparkles, Gift
+  PieChart, Gauge, Percent, Trophy
 } from 'lucide-react'
-import { LineChart as RechartsLineChart, Line, BarChart as RechartsBarChart, Bar, PieChart as RechartsPieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from 'recharts'
-import GamificationService, { BADGES, LEVELS } from '../services/GamificationService'
-import IntelligentAlerts from './IntelligentAlerts'
 import PerformanceReport from './PerformanceReport'
-import PredictiveAnalysisComponent from './PredictiveAnalysis'
-import BehavioralAnalysis from './BehavioralAnalysis'
-import PersonalGoals from './PersonalGoals'
-import WellnessMonitor from './WellnessMonitor'
 import DashboardCustomizer from './DashboardCustomizer'
-import ActivityFeed from './ActivityFeed'
 import AdvancedRecommendations from '../services/AdvancedRecommendations'
+import AIInsightsService from '../services/AIInsightsService'
 
 const TechnicianPerformance = ({ data }) => {
   const [selectedTechnician, setSelectedTechnician] = useState(null)
@@ -23,6 +16,10 @@ const TechnicianPerformance = ({ data }) => {
   const [visibleWidgets, setVisibleWidgets] = useState(null) // null = todos visíveis
   const [hasError, setHasError] = useState(false)
   const [errorMessage, setErrorMessage] = useState(null)
+
+  const defaultVisibleWidgetIds = useMemo(() => {
+    return new Set(['kpis', 'insights', 'recommendations', 'comparison', 'report'])
+  }, [])
 
   // Validação de dados
   if (!data || !Array.isArray(data) || data.length === 0) {
@@ -168,9 +165,20 @@ const TechnicianPerformance = ({ data }) => {
       .filter(t => t['Tempo para solução'])
       .map(t => parseTimeToMinutes(t['Tempo para solução']))
       .filter(t => t > 0)
-    
+
+    const sortedResolutionTimes = [...resolutionTimes].sort((a, b) => a - b)
     const avgResolutionTime = resolutionTimes.length > 0
       ? resolutionTimes.reduce((sum, t) => sum + t, 0) / resolutionTimes.length
+      : 0
+
+    const medianResolutionTime = sortedResolutionTimes.length > 0
+      ? (sortedResolutionTimes.length % 2 === 1
+        ? sortedResolutionTimes[Math.floor(sortedResolutionTimes.length / 2)]
+        : (sortedResolutionTimes[(sortedResolutionTimes.length / 2) - 1] + sortedResolutionTimes[sortedResolutionTimes.length / 2]) / 2)
+      : 0
+
+    const p90ResolutionTime = sortedResolutionTimes.length > 0
+      ? sortedResolutionTimes[Math.min(sortedResolutionTimes.length - 1, Math.floor(sortedResolutionTimes.length * 0.9))]
       : 0
 
     // Análise por categoria
@@ -247,6 +255,18 @@ const TechnicianPerformance = ({ data }) => {
     Object.values(monthlyStats).forEach(stats => {
       if (stats.resolutionTimes.length > 0) {
         stats.avgResolutionTime = stats.resolutionTimes.reduce((sum, t) => sum + t, 0) / stats.resolutionTimes.length
+        const sortedResolutionTimes = [...stats.resolutionTimes].sort((a, b) => a - b)
+        stats.medianResolutionTime = sortedResolutionTimes.length > 0
+          ? (sortedResolutionTimes.length % 2 === 1
+            ? sortedResolutionTimes[Math.floor(sortedResolutionTimes.length / 2)]
+            : (sortedResolutionTimes[(sortedResolutionTimes.length / 2) - 1] + sortedResolutionTimes[sortedResolutionTimes.length / 2]) / 2)
+          : 0
+        stats.p90ResolutionTime = sortedResolutionTimes.length > 0
+          ? sortedResolutionTimes[Math.min(sortedResolutionTimes.length - 1, Math.floor(sortedResolutionTimes.length * 0.9))]
+          : 0
+      } else {
+        stats.medianResolutionTime = 0
+        stats.p90ResolutionTime = 0
       }
       stats.compliance = stats.total > 0 ? (stats.slaMet / stats.total) * 100 : 0
     })
@@ -260,6 +280,7 @@ const TechnicianPerformance = ({ data }) => {
       })
 
     return {
+      technician: selectedTechnician,
       total,
       resolved,
       open,
@@ -267,10 +288,12 @@ const TechnicianPerformance = ({ data }) => {
       slaExceeded,
       slaCompliance,
       avgResolutionTime,
+      medianResolutionTime,
+      p90ResolutionTime,
       categoryStats,
       monthlyData
     }
-  }, [technicianTickets, selectedTechnician])
+  }, [selectedTechnician, technicianTickets])
 
   // Calcular estatísticas da equipe para comparação
   const teamStats = useMemo(() => {
@@ -294,15 +317,28 @@ const TechnicianPerformance = ({ data }) => {
       .filter(t => t['Tempo para solução'])
       .map(t => parseTimeToMinutes(t['Tempo para solução']))
       .filter(t => t > 0)
-    
+
+    const sortedResolutionTimes = [...resolutionTimes].sort((a, b) => a - b)
     const avgResolutionTime = resolutionTimes.length > 0
       ? resolutionTimes.reduce((sum, t) => sum + t, 0) / resolutionTimes.length
+      : 0
+
+    const medianResolutionTime = sortedResolutionTimes.length > 0
+      ? (sortedResolutionTimes.length % 2 === 1
+        ? sortedResolutionTimes[Math.floor(sortedResolutionTimes.length / 2)]
+        : (sortedResolutionTimes[(sortedResolutionTimes.length / 2) - 1] + sortedResolutionTimes[sortedResolutionTimes.length / 2]) / 2)
+      : 0
+
+    const p90ResolutionTime = sortedResolutionTimes.length > 0
+      ? sortedResolutionTimes[Math.min(sortedResolutionTimes.length - 1, Math.floor(sortedResolutionTimes.length * 0.9))]
       : 0
 
     return {
       total,
       slaCompliance,
-      avgResolutionTime
+      avgResolutionTime,
+      medianResolutionTime,
+      p90ResolutionTime
     }
   }, [data, selectedTechnician])
 
@@ -364,15 +400,15 @@ const TechnicianPerformance = ({ data }) => {
     }
 
     // Tempo de resolução
-    if (technicianStats.avgResolutionTime > teamStats.avgResolutionTime * 1.2) {
+    if (technicianStats.medianResolutionTime > teamStats.medianResolutionTime * 1.2) {
       recs.push({
         type: 'warning',
         priority: 'alta',
         title: 'Tempo Médio de Resolução Elevado',
-        message: `Seu tempo médio de resolução (${Math.round(technicianStats.avgResolutionTime)} min) está ${Math.round(((technicianStats.avgResolutionTime / teamStats.avgResolutionTime) - 1) * 100)}% acima da média da equipe. Analise categorias problemáticas para identificar gargalos.`,
-        metric: 'avgResolutionTime',
-        current: technicianStats.avgResolutionTime,
-        target: teamStats.avgResolutionTime
+        message: `Sua mediana de resolução (${Math.round(technicianStats.medianResolutionTime)} min) está ${Math.round(((technicianStats.medianResolutionTime / teamStats.medianResolutionTime) - 1) * 100)}% acima da mediana da equipe. Analise categorias problemáticas para identificar gargalos.`,
+        metric: 'medianResolutionTime',
+        current: technicianStats.medianResolutionTime,
+        target: teamStats.medianResolutionTime
       })
     }
 
@@ -441,102 +477,28 @@ const TechnicianPerformance = ({ data }) => {
     })
   }, [selectedTechnician, technicianStats, teamStats, technicianTickets])
 
-  // Cálculo de Gamificação (XP, Níveis, Badges)
-  const gamification = useMemo(() => {
+  const aiInsights = useMemo(() => {
     if (!selectedTechnician || !technicianStats) return null
 
-    // Carregar progresso salvo
-    const savedProgress = GamificationService.loadTechnicianProgress(selectedTechnician)
-    
-    // Preparar dados para cálculo de XP
-    const xpData = {
-      tickets: technicianTickets,
-      slaCompliance: technicianStats.slaCompliance,
-      resolved: technicianStats.resolved,
-      total: technicianStats.total,
-      avgResolutionTime: technicianStats.avgResolutionTime
-    }
-    
-    // Calcular XP ganho neste período
-    const xpEarned = GamificationService.calculateXP(xpData)
-    
-    // Total XP (salvo + novo)
-    const totalXP = (savedProgress?.totalXP ?? 0) + (xpEarned ?? 0)
-    
-    // Obter nível atual - garantir valor padrão
-    const currentLevel = GamificationService.getCurrentLevel(totalXP) || LEVELS[0]
-    
-    // Progresso para próximo nível - garantir que sempre retorne valores válidos
-    const levelProgress = GamificationService.getLevelProgress(totalXP, currentLevel) || {
-      progress: 0,
-      xpNeeded: 0,
-      xpInLevel: 0,
-      xpNeededForNext: 100
-    }
-    
-    // Verificar badges
-    const newBadges = GamificationService.checkBadges(
-      selectedTechnician,
-      {
-        tickets: technicianTickets,
-        slaCompliance: technicianStats.slaCompliance,
-        avgResolutionTime: technicianStats.avgResolutionTime,
-        total: technicianStats.total,
-        resolved: technicianStats.resolved
-      },
-      null // histórico (pode ser expandido depois)
-    )
-    
-    // Filtrar badges já concedidas - garantir que savedProgress.badges seja array
-    const existingBadges = Array.isArray(savedProgress?.badges) ? savedProgress.badges : []
-    const existingBadgeIds = existingBadges.map(b => b?.id).filter(Boolean)
-    const earnedBadges = (newBadges || []).filter(b => b && !existingBadgeIds.includes(b.id))
-    
-    // Combinar badges antigas e novas
-    const allBadges = [
-      ...existingBadges.map(saved => {
-        if (!saved || !saved.id) return null
-        const badgeInfo = Object.values(BADGES).find(b => b.id === saved.id)
-        return badgeInfo ? { ...badgeInfo, earnedDate: saved.earnedDate } : null
-      }).filter(Boolean),
-      ...earnedBadges
-    ]
-    
-    // Salvar progresso atualizado
-    if (earnedBadges.length > 0 || xpEarned > 0) {
-      GamificationService.saveTechnicianProgress(
-        selectedTechnician,
-        totalXP,
-        allBadges,
-        currentLevel
-      )
-    }
-    
+    const generated = AIInsightsService.generateRecommendations({
+      technicianName: selectedTechnician,
+      technicianStats,
+      teamStats,
+      tickets: technicianTickets
+    })
+
     return {
-      totalXP,
-      xpEarned,
-      currentLevel,
-      levelProgress,
-      badges: allBadges,
-      newBadges: earnedBadges
+      score: generated.score,
+      recommendations: generated.recommendations,
+      topRisks: AIInsightsService.topTicketRisks(technicianTickets, 10)
     }
-  }, [selectedTechnician, technicianStats, technicianTickets])
+  }, [selectedTechnician, technicianStats, teamStats, technicianTickets])
 
   // Função helper para verificar se widget deve ser exibido
   const isWidgetVisible = (widgetId) => {
-    if (visibleWidgets === null) return true // Se null, mostrar todos
+    if (visibleWidgets === null) return defaultVisibleWidgetIds.has(widgetId)
     return visibleWidgets.includes(widgetId)
   }
-
-  // Efeito para mostrar notificações de novos badges
-  useEffect(() => {
-    if (gamification && gamification.newBadges && gamification.newBadges.length > 0) {
-      gamification.newBadges.forEach(badge => {
-        // Aqui pode ser adicionado um sistema de notificações
-        console.log(`Novo badge desbloqueado: ${badge.name}`)
-      })
-    }
-  }, [gamification?.newBadges])
 
   // Preparar dados para gráficos
   const chartData = useMemo(() => {
@@ -760,29 +722,32 @@ const TechnicianPerformance = ({ data }) => {
                   <Clock className="h-6 w-6 text-white" />
                 </div>
               </div>
-              <p className="text-sm text-gray-300 mb-1">Tempo Médio Resolução</p>
+              <p className="text-sm text-gray-300 mb-1">Tempo de Resolução (Mediana)</p>
               <p className="text-3xl font-bold text-white mb-2">
-                {Math.round(technicianStats.avgResolutionTime)} min
+                {Math.round(technicianStats.medianResolutionTime ?? technicianStats.avgResolutionTime)} min
               </p>
               {teamStats && (
                 <div className="flex items-center gap-2 text-xs">
-                  {technicianStats.avgResolutionTime <= teamStats.avgResolutionTime ? (
+                  {(technicianStats.medianResolutionTime ?? technicianStats.avgResolutionTime) <= (teamStats.medianResolutionTime ?? teamStats.avgResolutionTime) ? (
                     <>
                       <TrendingDown className="h-4 w-4 text-green-400" />
                       <span className="text-green-400">
-                        {Math.round(teamStats.avgResolutionTime - technicianStats.avgResolutionTime)} min mais rápido
+                        {Math.round((teamStats.medianResolutionTime ?? teamStats.avgResolutionTime) - (technicianStats.medianResolutionTime ?? technicianStats.avgResolutionTime))} min mais rápido
                       </span>
                     </>
                   ) : (
                     <>
                       <TrendingUp className="h-4 w-4 text-red-400" />
                       <span className="text-red-400">
-                        {Math.round(technicianStats.avgResolutionTime - teamStats.avgResolutionTime)} min mais lento
+                        {Math.round((technicianStats.medianResolutionTime ?? technicianStats.avgResolutionTime) - (teamStats.medianResolutionTime ?? teamStats.avgResolutionTime))} min mais lento
                       </span>
                     </>
                   )}
                 </div>
               )}
+              <p className="text-xs text-gray-400 mt-2">
+                p90: {Math.round(technicianStats.p90ResolutionTime ?? technicianStats.avgResolutionTime)} min
+              </p>
             </div>
 
             <div className="bg-gradient-to-br from-green-600/20 to-emerald-600/20 backdrop-blur-sm rounded-xl p-6 border-2 border-green-500/30 shadow-md hover:shadow-glow transition-all">
@@ -817,135 +782,73 @@ const TechnicianPerformance = ({ data }) => {
           </div>
           )}
 
-          {/* Monitor de Bem-Estar */}
-          {isWidgetVisible('wellness') && (
-            <WellnessMonitor
-              technicianTickets={technicianTickets}
-              technicianStats={technicianStats}
-              historicalData={technicianStats?.monthlyData || []}
-            />
-          )}
-
-          {/* Gamificação - Níveis, XP e Badges */}
-          {isWidgetVisible('gamification') && gamification && (
-            <div className="bg-gradient-to-br from-yellow-600/20 via-purple-600/20 to-pink-600/20 backdrop-blur-sm rounded-xl p-6 border-2 border-purple-500/30 shadow-md">
+          {/* Insights (IA) */}
+          {isWidgetVisible('insights') && aiInsights && (
+            <div className="bg-gradient-to-br from-emerald-600/20 via-cyan-600/20 to-blue-600/20 backdrop-blur-sm rounded-xl p-6 border-2 border-emerald-500/30 shadow-md">
               <h4 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                <Trophy className="h-6 w-6 text-yellow-400" />
-                Progresso e Conquistas
+                <BarChart3 className="h-6 w-6 text-emerald-400" />
+                Insights (IA)
               </h4>
-              
+
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Nível e XP */}
-                <div className="lg:col-span-2 bg-gray-800/50 rounded-lg p-6 border border-gray-700/50">
-                  <div className="flex items-center justify-between mb-4">
-                    <div>
-                      <p className="text-sm text-gray-400 mb-1">Nível Atual</p>
-                      <p className="text-3xl font-bold text-white">
-                        {gamification.currentLevel.level} - {gamification.currentLevel.name}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm text-gray-400 mb-1">Total de XP</p>
-                      <p className="text-2xl font-bold text-yellow-400">
-                        {(gamification.totalXP ?? 0).toLocaleString('pt-BR')}
-                      </p>
-                      {gamification.xpEarned > 0 && (
-                        <p className="text-xs text-green-400 mt-1 flex items-center gap-1">
-                          <ArrowUp className="h-3 w-3" />
-                          +{gamification.xpEarned} XP hoje
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                  
-                  {/* Barra de Progresso do Nível */}
-                  <div className="mb-2">
-                    <div className="flex items-center justify-between text-xs text-gray-400 mb-2">
-                      <span>Progresso para Nível {gamification.currentLevel?.level ? gamification.currentLevel.level + 1 : '?'}</span>
-                      <span>
-                        {(gamification.levelProgress?.xpInLevel ?? 0).toLocaleString('pt-BR')} / {(gamification.levelProgress?.xpNeededForNext ?? 0).toLocaleString('pt-BR')} XP
-                      </span>
-                    </div>
-                    <div className="w-full bg-gray-700/50 rounded-full h-4 overflow-hidden">
-                      <div
-                        className="bg-gradient-to-r from-yellow-500 via-orange-500 to-pink-500 h-4 rounded-full transition-all duration-500 flex items-center justify-end pr-2"
-                        style={{ width: `${Math.min(gamification.levelProgress?.progress ?? 0, 100)}%` }}
-                      >
-                        {(gamification.levelProgress?.progress ?? 0) > 15 && (
-                          <span className="text-xs font-bold text-white">
-                            {Math.round(gamification.levelProgress?.progress ?? 0)}%
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    {(gamification.levelProgress?.xpNeeded ?? 0) > 0 && (
-                      <p className="text-xs text-gray-400 mt-2">
-                        Faltam {(gamification.levelProgress?.xpNeeded ?? 0).toLocaleString('pt-BR')} XP para o próximo nível
-                      </p>
-                    )}
-                  </div>
+                <div className="bg-gray-800/50 rounded-lg p-6 border border-gray-700/50">
+                  <p className="text-sm text-gray-400 mb-2">Score de Performance</p>
+                  <p className="text-4xl font-bold text-white">
+                    {aiInsights.score?.performance ?? 'N/A'}
+                    <span className="text-sm text-gray-400">/100</span>
+                  </p>
+                  <p className="text-xs text-gray-400 mt-2">
+                    Baseado em SLA, tempo médio e backlog
+                  </p>
                 </div>
 
-                {/* Badges Conquistadas */}
                 <div className="bg-gray-800/50 rounded-lg p-6 border border-gray-700/50">
-                  <div className="flex items-center justify-between mb-4">
-                    <p className="text-sm text-gray-400">Badges Conquistadas</p>
-                    <span className="text-2xl font-bold text-purple-400">
-                      {gamification.badges.length}
-                    </span>
+                  <p className="text-sm text-gray-400 mb-2">Score de Risco</p>
+                  <p className="text-4xl font-bold text-white">
+                    {aiInsights.score?.risk ?? 'N/A'}
+                    <span className="text-sm text-gray-400">/100</span>
+                  </p>
+                  <p className="text-xs text-gray-400 mt-2">
+                    Maior = mais risco operacional (backlog + SLA excedido)
+                  </p>
+                </div>
+
+                <div className="bg-gray-800/50 rounded-lg p-6 border border-gray-700/50">
+                  <p className="text-sm text-gray-400 mb-2">Resumo</p>
+                  <div className="space-y-1 text-sm text-gray-300">
+                    <div className="flex items-center justify-between">
+                      <span>Abertos</span>
+                      <span className="font-semibold text-white">{aiInsights.score?.summary?.open ?? 0}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span>SLAs excedidos</span>
+                      <span className="font-semibold text-white">{aiInsights.score?.summary?.exceeded ?? 0}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span>Chamado mais antigo (aberto)</span>
+                      <span className="font-semibold text-white">{aiInsights.score?.summary?.oldestOpenDays ?? 0}d</span>
+                    </div>
                   </div>
-                  
-                  {gamification.badges.length > 0 ? (
-                    <div className="space-y-2 max-h-48 overflow-y-auto custom-scrollbar">
-                      {gamification.badges.slice(0, 5).map((badge, idx) => (
-                        <div
-                          key={idx}
-                          className={`p-2 rounded-lg border-2 flex items-center gap-2 ${
-                            GamificationService.getRarityColor(badge.rarity)
-                          }`}
-                        >
-                          <span className="text-2xl">{badge.icon}</span>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-xs font-bold text-white truncate">{badge.name}</p>
-                            <p className="text-xs text-gray-300 truncate">{badge.description}</p>
-                          </div>
-                        </div>
-                      ))}
-                      {gamification.badges.length > 5 && (
-                        <p className="text-xs text-gray-400 text-center">
-                          +{gamification.badges.length - 5} badges adicionais
-                        </p>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="text-center py-8">
-                      <Award className="h-12 w-12 text-gray-600 mx-auto mb-2" />
-                      <p className="text-sm text-gray-400">Nenhum badge conquistado ainda</p>
-                      <p className="text-xs text-gray-500 mt-1">Continue melhorando para desbloquear badges!</p>
-                    </div>
-                  )}
                 </div>
               </div>
 
-              {/* Novos Badges Desbloqueados */}
-              {gamification.newBadges && gamification.newBadges.length > 0 && (
-                <div className="mt-6 p-4 bg-green-500/20 border-2 border-green-500/50 rounded-lg animate-pulse">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Sparkles className="h-5 w-5 text-green-400" />
-                    <p className="font-bold text-green-400">Novos Badges Desbloqueados!</p>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {gamification.newBadges.map((badge, idx) => (
-                      <div
-                        key={idx}
-                        className={`p-3 rounded-lg border-2 flex items-center gap-3 ${
-                          GamificationService.getRarityColor(badge.rarity)
-                        }`}
-                      >
-                        <span className="text-3xl">{badge.icon}</span>
-                        <div className="flex-1">
-                          <p className="text-sm font-bold text-white">{badge.name}</p>
-                          <p className="text-xs text-gray-300">{badge.description}</p>
+              {aiInsights.topRisks && aiInsights.topRisks.length > 0 && (
+                <div className="mt-6">
+                  <h5 className="text-lg font-bold text-white mb-3">Top chamados críticos</h5>
+                  <div className="space-y-3">
+                    {aiInsights.topRisks.slice(0, 5).map((t, idx) => (
+                      <div key={idx} className="bg-gray-800/50 rounded-lg p-4 border border-gray-700/50">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="text-sm font-bold text-white truncate">#{t.id} - {t.title}</p>
+                            <p className="text-xs text-gray-400 mt-1 truncate">
+                              {(t.factors || []).slice(0, 3).map(f => f.label).join(' • ')}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-xs text-gray-400">Risco</p>
+                            <p className="text-lg font-bold text-red-400">{t.risk}/100</p>
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -953,42 +856,6 @@ const TechnicianPerformance = ({ data }) => {
                 </div>
               )}
             </div>
-          )}
-
-          {/* Alertas Inteligentes */}
-          {isWidgetVisible('alerts') && (
-            <IntelligentAlerts
-            technicianStats={technicianStats}
-            teamStats={teamStats}
-            technicianTickets={technicianTickets}
-              percentileRank={percentileRank}
-            />
-          )}
-
-          {/* Análise Preditiva */}
-          {isWidgetVisible('predictive') && (
-            <PredictiveAnalysisComponent
-            technicianStats={technicianStats}
-            historicalData={technicianStats?.monthlyData || []}
-              openTickets={technicianTickets.filter(t => t.Status !== 'Solucionado' && t.Status !== 'Fechado')}
-            />
-          )}
-
-          {/* Análise Comportamental */}
-          {isWidgetVisible('behavioral') && (
-            <BehavioralAnalysis
-            technicianTickets={technicianTickets}
-              technicianStats={technicianStats}
-            />
-          )}
-
-          {/* Sistema de Metas */}
-          {isWidgetVisible('goals') && (
-            <PersonalGoals
-            technicianName={selectedTechnician}
-            technicianStats={technicianStats}
-              historicalData={technicianStats?.monthlyData || []}
-            />
           )}
 
           {/* Recomendações */}
@@ -1184,168 +1051,13 @@ const TechnicianPerformance = ({ data }) => {
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-white font-semibold">{cat.name}</span>
                         <span className={`text-sm font-bold ${
-                          cat.compliance >= 90 ? 'text-green-400' :
-                          cat.compliance >= 70 ? 'text-yellow-400' :
-                          'text-red-400'
-                        }`}>
-                          {cat.compliance.toFixed(1)}%
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between text-xs text-gray-400">
-                        <span>{cat.total} chamados</span>
-                        <span>Tempo médio: {cat['Tempo Médio']} min</span>
-                      </div>
-                      <div className="mt-2 w-full bg-gray-600/50 rounded-full h-2">
-                        <div
-                          className={`h-2 rounded-full ${
-                            cat.compliance >= 90 ? 'bg-green-500' :
-                            cat.compliance >= 70 ? 'bg-yellow-500' :
-                            'bg-red-500'
-                          }`}
-                          style={{ width: `${cat.compliance}%` }}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Análise de Habilidades por Categoria - Gráfico Radar */}
-          {isWidgetVisible('radar') && chartData.radar && chartData.radar.length > 0 && (
-            <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 border border-gray-700/50 shadow-md">
-              <h4 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                <Target className="h-6 w-6 text-purple-400" />
-                Análise de Habilidades por Categoria
-              </h4>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Gráfico Radar */}
-                <div className="bg-gray-900/50 rounded-lg p-4">
-                  {chartData.radar && chartData.radar.length > 0 ? (
-                    <ResponsiveContainer width="100%" height={400}>
-                      <RadarChart data={chartData.radar}>
-                        <PolarGrid stroke="#374151" />
-                        <PolarAngleAxis 
-                          dataKey="category" 
-                          tick={{ fill: '#9ca3af', fontSize: 12 }}
-                        />
-                        <PolarRadiusAxis 
-                          angle={90} 
-                          domain={[0, 100]}
-                          tick={{ fill: '#9ca3af', fontSize: 10 }}
-                        />
-                        <Radar
-                          name="Compliance"
-                          dataKey="compliance"
-                          stroke="#3b82f6"
-                          fill="#3b82f6"
-                          fillOpacity={0.6}
-                        />
-                        <Radar
-                          name="Eficiência"
-                          dataKey="efficiency"
-                          stroke="#10b981"
-                          fill="#10b981"
-                          fillOpacity={0.4}
-                        />
-                        <Tooltip
-                          contentStyle={{
-                            backgroundColor: '#1f2937',
-                            border: '1px solid #374151',
-                            borderRadius: '8px',
-                            color: '#fff'
-                          }}
-                        />
-                        <Legend />
-                      </RadarChart>
-                    </ResponsiveContainer>
-                  ) : (
-                    <div className="flex items-center justify-center h-96 text-gray-400">
-                      <p>Dados insuficientes para o gráfico radar</p>
-                    </div>
-                  )}
-                </div>
-
-                {/* Legenda e Detalhes */}
-                <div className="space-y-4">
-                  <div className="bg-gradient-to-br from-purple-600/20 to-pink-600/20 rounded-lg p-4 border border-purple-500/30">
-                    <h5 className="font-bold text-white mb-3 flex items-center gap-2">
-                      <Activity className="h-5 w-5 text-purple-400" />
-                      Interpretação do Gráfico
-                    </h5>
-                    <ul className="space-y-2 text-sm text-gray-300">
-                      <li className="flex items-start gap-2">
-                        <div className="w-2 h-2 rounded-full bg-blue-500 mt-2 flex-shrink-0"></div>
-                        <div>
-                          <span className="font-semibold text-blue-400">Compliance:</span> Percentual de SLA atendido em cada categoria
-                        </div>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <div className="w-2 h-2 rounded-full bg-green-500 mt-2 flex-shrink-0"></div>
-                        <div>
-                          <span className="font-semibold text-green-400">Eficiência:</span> Score combinado de compliance e volume
-                        </div>
-                      </li>
-                      <li className="text-xs text-gray-400 mt-3">
-                        Categorias mais próximas do centro (0) precisam de mais atenção. Categorias mais externas (100) são seus pontos fortes.
-                      </li>
-                    </ul>
-                  </div>
-
-                  {/* Detalhes por Categoria */}
-                  <div className="space-y-2">
-                    <h5 className="font-bold text-white mb-3">Pontuações por Categoria</h5>
-                    {chartData.radar.map((item, idx) => (
-                      <div key={idx} className="bg-gray-700/50 rounded-lg p-3">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-white font-semibold text-sm">{item.category}</span>
-                          <span className={`text-xs font-bold ${
-                            item.efficiency >= 80 ? 'text-green-400' :
-                            item.efficiency >= 60 ? 'text-yellow-400' :
-                            'text-red-400'
-                          }`}>
-                            {item.efficiency}/100
-                          </span>
-                        </div>
-                        <div className="flex gap-4 text-xs text-gray-400">
-                          <span>Compliance: <span className="text-blue-400 font-semibold">{item.compliance}%</span></span>
-                          <span>Volume: <span className="text-purple-400 font-semibold">{item.volume}%</span></span>
-                        </div>
-                        <div className="mt-2 w-full bg-gray-600/50 rounded-full h-1.5">
-                          <div
-                            className={`h-1.5 rounded-full ${
-                              item.efficiency >= 80 ? 'bg-green-500' :
-                              item.efficiency >= 60 ? 'bg-yellow-500' :
-                              'bg-red-500'
-                            }`}
-                            style={{ width: `${item.efficiency}%` }}
-                          />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Feed de Atividades */}
-          {isWidgetVisible('activity') && (
-            <ActivityFeed
-              technicianName={selectedTechnician}
-              technicianStats={technicianStats}
-              gamification={gamification}
-            />
-          )}
-
           {/* Relatório Personalizado */}
           {isWidgetVisible('report') && (
             <PerformanceReport
               technicianName={selectedTechnician}
               technicianStats={technicianStats}
               teamStats={teamStats}
-              gamification={gamification}
+              insights={aiInsights}
               recommendations={recommendations}
               percentileRank={percentileRank}
             />

@@ -1,17 +1,18 @@
 import React, { useState, useMemo } from 'react'
-import { RotateCcw, Download, Filter, BarChart3, Table, PieChart, FolderOpen, Star, User } from 'lucide-react'
+import { RotateCcw, Download, Filter, BarChart3, Table, PieChart, FolderOpen, Star, User, Database } from 'lucide-react'
 import TicketTable from './TicketTable'
 import TicketCharts from './TicketCharts'
 import TicketStats from './TicketStats'
 import CategoryAnalysis from './CategoryAnalysis'
 import EvaluationSummary from './EvaluationSummary'
 import TechnicianPerformance from './TechnicianPerformance'
+import CoreplanIntegration from './CoreplanIntegration'
 import Breadcrumbs from './Breadcrumbs'
 import ErrorBoundary from './ErrorBoundary'
 
 const Dashboard = ({ data, columns, onReset }) => {
   const [chartType, setChartType] = useState('status')
-  const [viewMode, setViewMode] = useState('stats') // stats, charts, table, category, evaluations, performance
+  const [viewMode, setViewMode] = useState('stats') // stats, charts, table, category, evaluations, performance, integration
   const [tableFilterMode, setTableFilterMode] = useState('none')
   const [tableInitialSearch, setTableInitialSearch] = useState('')
 
@@ -66,6 +67,12 @@ const Dashboard = ({ data, columns, onReset }) => {
             <TechnicianPerformance data={data} />
           </ErrorBoundary>
         )
+      case 'integration':
+        return (
+          <ErrorBoundary>
+            <CoreplanIntegration />
+          </ErrorBoundary>
+        )
       default:
         return <TicketStats data={data} />
     }
@@ -81,6 +88,7 @@ const Dashboard = ({ data, columns, onReset }) => {
     if (viewMode === 'category') items.push({ label: 'Análise por Categoria' })
     if (viewMode === 'evaluations') items.push({ label: 'Avaliações' })
     if (viewMode === 'performance') items.push({ label: 'Análise Individual' })
+    if (viewMode === 'integration') items.push({ label: 'Integração GLPI' })
     
     return items
   }, [viewMode])
@@ -206,6 +214,19 @@ const Dashboard = ({ data, columns, onReset }) => {
                   <User className="h-4 w-4" />
                   <span className="hidden sm:inline">Individual</span>
                   <span className="sm:hidden">Ind.</span>
+                </button>
+
+                <button
+                  onClick={() => setViewMode('integration')}
+                  className={`flex items-center justify-center gap-2 px-3 md:px-4 py-2.5 md:py-3 rounded-lg border transition-all duration-300 text-sm md:text-base ${
+                    viewMode === 'integration'
+                      ? 'bg-gradient-to-r from-emerald-600 to-cyan-600 text-white border-emerald-600 shadow-glow scale-105'
+                      : 'bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600 hover:scale-105 active:scale-95'
+                  }`}
+                >
+                  <Database className="h-4 w-4" />
+                  <span className="hidden sm:inline">Integração</span>
+                  <span className="sm:hidden">GLPI</span>
                 </button>
               </div>
 

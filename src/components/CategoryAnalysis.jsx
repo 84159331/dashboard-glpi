@@ -191,11 +191,11 @@ const CategoryAnalysis = ({ data }) => {
                   <div className="p-2 bg-white/10 rounded-lg backdrop-blur-sm">
                     <FolderOpen className="h-5 w-5 text-white" />
                   </div>
-                  <h4 className="font-bold text-white text-base md:text-lg leading-tight">
-                    {category.name.length > 25 
-                      ? category.name.substring(0, 25) + '...' 
-                      : category.name
-                    }
+                  <h4
+                    className="font-bold text-white text-base md:text-lg leading-tight whitespace-normal break-words"
+                    title={category.name}
+                  >
+                    {category.name}
                   </h4>
                 </div>
               </div>
@@ -263,7 +263,10 @@ const CategoryAnalysis = ({ data }) => {
                         className="flex items-center justify-between p-3 bg-white/5 rounded-lg hover:bg-white/10 transition-all duration-200 backdrop-blur-sm border border-white/5"
                       >
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-white truncate">
+                          <p
+                            className="text-sm font-medium text-white whitespace-normal break-words"
+                            title={`${ticket.ID ? `#${ticket.ID} - ` : ''}${ticket.Título || ''}`}
+                          >
                             <span className="text-purple-400 font-bold">#{ticket.ID}</span> - {ticket.Título}
                           </p>
                           <p className="text-xs text-gray-400 mt-1">
@@ -302,7 +305,7 @@ const CategoryAnalysis = ({ data }) => {
               <h3 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent mb-2">
                 Chamados da Categoria
               </h3>
-              <p className="text-lg text-white font-semibold">{selectedCategory}</p>
+              <p className="text-lg text-white font-semibold whitespace-normal break-words" title={selectedCategory}>{selectedCategory}</p>
               {(() => {
                 const selectedCat = categoryStats.find(cat => cat.name === selectedCategory)
                 return selectedCat && (
@@ -351,9 +354,9 @@ const CategoryAnalysis = ({ data }) => {
                           </span>
                         </div>
                       </div>
-                      <h3 className="font-medium text-white mb-1 line-clamp-2">{ticket.Título}</h3>
+                      <h3 className="font-medium text-white mb-1 whitespace-normal break-words" title={ticket.Título}>{ticket.Título}</h3>
                       {ticket['Requerente - Requerente'] && (
-                        <p className="text-xs text-gray-400 truncate">
+                        <p className="text-xs text-gray-400 whitespace-normal break-words" title={ticket['Requerente - Requerente']}>
                           Por: {ticket['Requerente - Requerente']}
                         </p>
                       )}
@@ -400,7 +403,7 @@ const CategoryAnalysis = ({ data }) => {
                         </td>
                         <td className="px-4 py-4 text-sm">
                           <div className="max-w-xs">
-                            <span className="font-medium text-white truncate block" title={ticket.Título}>
+                            <span className="font-medium text-white whitespace-normal break-words block" title={ticket.Título}>
                               {ticket.Título}
                             </span>
                           </div>
@@ -424,7 +427,7 @@ const CategoryAnalysis = ({ data }) => {
                           </div>
                         </td>
                         <td className="px-4 py-4 text-sm text-gray-300">
-                          <span className="truncate max-w-[150px] block" title={ticket['Requerente - Requerente']}>
+                          <span className="whitespace-normal break-words max-w-[220px] block" title={ticket['Requerente - Requerente']}>
                             {ticket['Requerente - Requerente']}
                           </span>
                         </td>

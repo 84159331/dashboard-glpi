@@ -7,7 +7,7 @@ const Header = ({ onHomeClick, onViewChange, currentView }) => {
   const [isVisible, setIsVisible] = useState(false)
 
   useEffect(() => {
-    const id = setInterval(() => setNow(new Date()), 1000)
+    const id = setInterval(() => setNow(new Date()), 30000)
     setIsVisible(true)
     return () => clearInterval(id)
   }, [])

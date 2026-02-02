@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react'
 import { X, ThumbsUp, ThumbsDown, Clock, User, Tag, MessageSquare, Star, AlertTriangle, TrendingUp, TrendingDown, Target, Timer, CheckCircle2, XCircle, Activity, Gauge, Shield, Zap, BarChart3, GaugeCircle, Award, Info, Lightbulb, AlertCircle, Minus } from 'lucide-react'
+import AIInsightsService from '../services/AIInsightsService'
 
 const TicketDetails = ({ ticket, isOpen, onClose, onEvaluate }) => {
   const [evaluation, setEvaluation] = useState(null)
@@ -399,6 +400,14 @@ const TicketDetails = ({ ticket, isOpen, onClose, onEvaluate }) => {
     }
   }, [normalizedTicket])
 
+  const aiTicketInsights = useMemo(() => {
+    try {
+      return AIInsightsService.scoreTicket(normalizedTicket)
+    } catch {
+      return { risk: 0, factors: [] }
+    }
+  }, [normalizedTicket])
+
   // Função para formatar tempo (não é um hook, pode estar aqui)
   const formatTime = (timeStr) => {
     if (!timeStr) return 'N/A'
@@ -526,6 +535,44 @@ const TicketDetails = ({ ticket, isOpen, onClose, onEvaluate }) => {
                 </span>
               </div>
             </div>
+          </div>
+
+          {/* Insights (IA) do Chamado */}
+          <div className="bg-gradient-to-br from-emerald-50 via-cyan-50 to-blue-50 p-6 rounded-xl border border-emerald-200">
+            <div className="flex items-start justify-between gap-4">
+              <div className="min-w-0">
+                <h4 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5 text-emerald-600" />
+                  Insights (IA) do Chamado
+                </h4>
+                <p className="text-sm text-gray-600 mt-1">
+                  Priorização automática com base em SLA, prioridade, envelhecimento e atribuição.
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="text-xs text-gray-600">Risco</p>
+                <p className="text-3xl font-bold text-red-600">{aiTicketInsights.risk}/100</p>
+              </div>
+            </div>
+
+            {Array.isArray(aiTicketInsights.factors) && aiTicketInsights.factors.length > 0 ? (
+              <div className="mt-4">
+                <p className="text-sm font-semibold text-gray-800 mb-2">Principais motivos</p>
+                <div className="flex flex-wrap gap-2">
+                  {aiTicketInsights.factors.slice(0, 6).map((f, idx) => (
+                    <span
+                      key={idx}
+                      className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-gray-900/5 text-gray-800 border border-gray-200"
+                      title={f.label}
+                    >
+                      {f.label}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <p className="mt-3 text-sm text-gray-600">Sem alertas de risco detectados.</p>
+            )}
           </div>
 
           {/* Métricas de Tempo */}

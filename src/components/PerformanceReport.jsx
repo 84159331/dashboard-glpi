@@ -1,7 +1,7 @@
 import React from 'react'
 import { Download, FileText, Calendar, User } from 'lucide-react'
 
-const PerformanceReport = ({ technicianName, technicianStats, teamStats, gamification, recommendations, percentileRank }) => {
+const PerformanceReport = ({ technicianName, technicianStats, teamStats, insights, recommendations, percentileRank }) => {
   const generateReport = () => {
     const reportDate = new Date().toLocaleDateString('pt-BR', {
       day: '2-digit',
@@ -35,17 +35,18 @@ ${teamStats ? `• Comparação com Equipe: ${technicianStats.avgResolutionTime 
 • Chamados Resolvidos: ${technicianStats.resolved} de ${technicianStats.total}
 • SLA Excedido: ${technicianStats.slaExceeded} (${technicianStats.total > 0 ? ((technicianStats.slaExceeded / technicianStats.total) * 100).toFixed(1) : 0}%)
 
-${gamification ? `
+${insights ? `
 ═══════════════════════════════════════════════════════════════
-                    PROGRESSO E CONQUISTAS
+                    INSIGHTS (IA)
 ═══════════════════════════════════════════════════════════════
 
-• Nível Atual: ${gamification.currentLevel.level} - ${gamification.currentLevel.name}
-• Total de XP: ${gamification.totalXP.toLocaleString('pt-BR')}
-${gamification.xpEarned > 0 ? `• XP Ganho Hoje: +${gamification.xpEarned}` : ''}
+• Score de Performance: ${insights.score?.performance ?? 'N/A'}/100
+• Score de Risco: ${insights.score?.risk ?? 'N/A'}/100
+• Backlog (abertos): ${insights.score?.summary?.open ?? 'N/A'}
+• SLAs excedidos: ${insights.score?.summary?.exceeded ?? 'N/A'}
 
-• Badges Conquistadas: ${gamification.badges.length}
-${gamification.badges.length > 0 ? gamification.badges.map(b => `  - ${b.name}: ${b.description}`).join('\n') : '  Nenhum badge conquistado ainda'}
+Top chamados críticos:
+${(insights.topRisks || []).slice(0, 5).map((t, idx) => `  ${idx + 1}) #${t.id} - ${t.title} (Risco ${t.risk}/100)\n     Motivos: ${(t.factors || []).slice(0, 3).map(f => f.label).join(', ')}`).join('\n')}
 ` : ''}
 
 ${recommendations && recommendations.length > 0 ? `
@@ -190,13 +191,15 @@ ${idx + 1}. ${rec.title} [Prioridade: ${rec.priority}]
     ${percentileRank !== null ? `<p><strong>Posicionamento:</strong> Top ${100 - percentileRank}% da equipe</p>` : ''}
   </div>
 
-  ${gamification ? `
+  ${insights ? `
   <div class="section">
-    <h2>Progresso e Conquistas</h2>
-    <p><strong>Nível:</strong> ${gamification.currentLevel.level} - ${gamification.currentLevel.name}</p>
-    <p><strong>Total de XP:</strong> ${gamification.totalXP.toLocaleString('pt-BR')}</p>
-    <p><strong>Badges Conquistadas:</strong> ${gamification.badges.length}</p>
-    ${gamification.badges.map(b => `<span class="badge">${b.icon} ${b.name}</span>`).join('')}
+    <h2>Insights (IA)</h2>
+    <p><strong>Score de Performance:</strong> ${insights.score?.performance ?? 'N/A'}/100</p>
+    <p><strong>Score de Risco:</strong> ${insights.score?.risk ?? 'N/A'}/100</p>
+    <p><strong>Backlog (abertos):</strong> ${insights.score?.summary?.open ?? 'N/A'}</p>
+    <p><strong>SLAs excedidos:</strong> ${insights.score?.summary?.exceeded ?? 'N/A'}</p>
+    <h3>Top chamados críticos</h3>
+    ${(insights.topRisks || []).slice(0, 5).map(t => `<div class="recommendation"><strong>#${t.id}</strong> (Risco ${t.risk}/100) - ${t.title}<br/><small>${(t.factors || []).slice(0, 3).map(f => f.label).join(', ')}</small></div>`).join('')}
   </div>
   ` : ''}
 

@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react'
+import Papa from 'papaparse'
 import { ChevronLeft, ChevronRight, Search, Filter, Clock, AlertTriangle, Eye, Download, User, Tag, Calendar, TrendingUp, Info, Table, Sparkles, BarChart3 } from 'lucide-react'
 import TicketDetails from './TicketDetails'
+import AIInsightsService from '../services/AIInsightsService'
 
 // filterMode: 'none' | 'open' | 'all' | 'slaMet' | 'slaExceeded'
 const TicketTable = ({ data, filterMode = 'none', initialSearchTerm = '' }) => {
@@ -12,6 +14,7 @@ const TicketTable = ({ data, filterMode = 'none', initialSearchTerm = '' }) => {
   const [priorityFilter, setPriorityFilter] = useState('all')
   const [dateFilter, setDateFilter] = useState('all')
   const [technicianFilter, setTechnicianFilter] = useState('all')
+  const [riskFilter, setRiskFilter] = useState('all') // all | critical
   const [selectedTicket, setSelectedTicket] = useState(null)
   const [isDetailsOpen, setIsDetailsOpen] = useState(false)
   const [isExporting, setIsExporting] = useState(false)
@@ -38,79 +41,143 @@ const TicketTable = ({ data, filterMode = 'none', initialSearchTerm = '' }) => {
     return Array.from(techSet).sort()
   }, [data])
 
-  const filteredData = data.filter(ticket => {
-    const matchesSearch = Object.values(ticket).some(value =>
-      String(value).toLowerCase().includes(searchTerm.toLowerCase())
-    )
-    
-    const isOpen = ticket.Status !== 'Solucionado' && ticket.Status !== 'Fechado'
-    const isSlaExceeded = ticket['Tempo para resolver excedido'] === 'Sim'
-    const technician = ticket['Técnico responsável'] || ticket['Atribuído - Técnico'] || 'Não atribuído'
-    
-    // Filtro por data
-    const ticketDate = ticket['Data de abertura']
-    const matchesDate = (() => {
-      if (dateFilter === 'all') return true
-      if (!ticketDate) return false
-      
-      const date = new Date(ticketDate.split(' ')[0].split('/').reverse().join('-'))
-      const now = new Date()
-      
-      switch (dateFilter) {
-        case 'today':
-          return date.toDateString() === now.toDateString()
-        case 'week':
-          const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
-          return date >= weekAgo
-        case 'month':
-          const monthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate())
-          return date >= monthAgo
-        default:
-          return true
+  const searchableIndex = useMemo(() => {
+    return data.map(ticket => {
+      try {
+        return Object.values(ticket)
+          .map(v => String(v ?? ''))
+          .join(' ')
+          .toLowerCase()
+      } catch {
+        return ''
       }
-    })()
-    
-    const matchesByMode = (() => {
-      switch (filterMode) {
-        case 'open':
-          return isOpen
-        case 'all':
-          return true
-        case 'slaMet':
-          return !isSlaExceeded
-        case 'slaExceeded':
-          return isSlaExceeded
-        default:
-          return statusFilter === 'all' || ticket.Status === statusFilter
-      }
-    })()
+    })
+  }, [data])
 
-    const matchesStatus = matchesByMode
-    const matchesPriority = priorityFilter === 'all' || ticket.Prioridade === priorityFilter
-    const matchesTechnician = technicianFilter === 'all' || technician === technicianFilter
-    
-    return matchesSearch && matchesStatus && matchesPriority && matchesDate && matchesTechnician
-  })
+  const riskIndex = useMemo(() => {
+    try {
+      const byIndex = new Map()
+      const byTicket = new WeakMap()
+
+      data.forEach((ticket, idx) => {
+        try {
+          const scored = AIInsightsService.scoreTicket(ticket)
+          const risk = scored?.risk ?? 0
+          const factors = scored?.factors ?? []
+          byIndex.set(idx, { risk, factors })
+          if (ticket && typeof ticket === 'object') {
+            byTicket.set(ticket, { risk, factors })
+          }
+        } catch {
+          byIndex.set(idx, { risk: 0, factors: [] })
+          if (ticket && typeof ticket === 'object') {
+            byTicket.set(ticket, { risk: 0, factors: [] })
+          }
+        }
+      })
+
+      return { byIndex, byTicket }
+    } catch {
+      return { byIndex: new Map(), byTicket: new WeakMap() }
+    }
+  }, [data])
+
+  const getRiskForTicket = (ticket, fallback = 0) => {
+    try {
+      const cached = riskIndex.byTicket.get(ticket)
+      return cached?.risk ?? fallback
+    } catch {
+      return fallback
+    }
+  }
+
+  const filteredData = useMemo(() => {
+    const q = (searchTerm || '').trim().toLowerCase()
+
+    return data.filter((ticket, idx) => {
+      const matchesSearch = q.length === 0 || (searchableIndex[idx] || '').includes(q)
+
+      const isOpen = ticket.Status !== 'Solucionado' && ticket.Status !== 'Fechado'
+      const isSlaExceeded = ticket['Tempo para resolver excedido'] === 'Sim'
+      const technician = ticket['Técnico responsável'] || ticket['Atribuído - Técnico'] || 'Não atribuído'
+
+      const ticketDate = ticket['Data de abertura']
+      const matchesDate = (() => {
+        if (dateFilter === 'all') return true
+        if (!ticketDate) return false
+
+        const date = new Date(ticketDate.split(' ')[0].split('/').reverse().join('-'))
+        const now = new Date()
+
+        switch (dateFilter) {
+          case 'today':
+            return date.toDateString() === now.toDateString()
+          case 'week': {
+            const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+            return date >= weekAgo
+          }
+          case 'month': {
+            const monthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate())
+            return date >= monthAgo
+          }
+          default:
+            return true
+        }
+      })()
+
+      const matchesByMode = (() => {
+        switch (filterMode) {
+          case 'open':
+            return isOpen
+          case 'all':
+            return true
+          case 'slaMet':
+            return !isSlaExceeded
+          case 'slaExceeded':
+            return isSlaExceeded
+          default:
+            return statusFilter === 'all' || ticket.Status === statusFilter
+        }
+      })()
+
+      const matchesPriority = priorityFilter === 'all' || ticket.Prioridade === priorityFilter
+      const matchesTechnician = technicianFilter === 'all' || technician === technicianFilter
+
+      const risk = riskIndex.byIndex.get(idx)?.risk ?? 0
+      const matchesRisk = riskFilter === 'all' || risk >= 70
+
+      return matchesSearch && matchesByMode && matchesPriority && matchesDate && matchesTechnician && matchesRisk
+    })
+  }, [data, searchableIndex, searchTerm, filterMode, statusFilter, priorityFilter, dateFilter, technicianFilter, riskFilter, riskIndex])
 
   // Ordenar dados
-  const sortedData = [...filteredData].sort((a, b) => {
-    if (!sortColumn) return 0
-    
-    let aValue = a[sortColumn] || ''
-    let bValue = b[sortColumn] || ''
-    
-    // Tratamento especial para datas
-    if (sortColumn === 'Data de abertura') {
-      aValue = new Date(aValue.split(' ')[0].split('/').reverse().join('-'))
-      bValue = new Date(bValue.split(' ')[0].split('/').reverse().join('-'))
-    }
-    
-    if (sortDirection === 'asc') {
-      return aValue > bValue ? 1 : -1
-    } else {
+  const sortedData = useMemo(() => {
+    const out = [...filteredData]
+    if (!sortColumn) return out
+
+    out.sort((a, b) => {
+      if (sortColumn === 'Risco IA') {
+        const aRisk = getRiskForTicket(a, 0)
+        const bRisk = getRiskForTicket(b, 0)
+        return sortDirection === 'asc' ? aRisk - bRisk : bRisk - aRisk
+      }
+
+      let aValue = a[sortColumn] || ''
+      let bValue = b[sortColumn] || ''
+
+      if (sortColumn === 'Data de abertura') {
+        aValue = new Date(String(aValue).split(' ')[0].split('/').reverse().join('-'))
+        bValue = new Date(String(bValue).split(' ')[0].split('/').reverse().join('-'))
+      }
+
+      if (sortDirection === 'asc') {
+        return aValue > bValue ? 1 : -1
+      }
       return aValue < bValue ? 1 : -1
-    }
-  })
+    })
+
+    return out
+  }, [filteredData, sortColumn, sortDirection, riskIndex])
 
   // Paginação
   const totalPages = Math.ceil(sortedData.length / itemsPerPage)
@@ -175,16 +242,29 @@ const TicketTable = ({ data, filterMode = 'none', initialSearchTerm = '' }) => {
 
   const handleExportData = () => {
     setIsExporting(true)
-    
-    // Simular processamento
-    setTimeout(() => {
-      const csvContent = [
-        Object.keys(filteredData[0] || {}).join(';'),
-        ...filteredData.map(row => 
-          Object.values(row).map(val => `"${val || ''}"`).join(';')
-        )
-      ].join('\n')
-      
+
+    try {
+      const exportData = filteredData.map(ticket => {
+        try {
+          const scored = AIInsightsService.scoreTicket(ticket)
+          return {
+            ...ticket,
+            'Risco IA': scored?.risk ?? 0
+          }
+        } catch {
+          return {
+            ...ticket,
+            'Risco IA': 0
+          }
+        }
+      })
+
+      const csvContent = Papa.unparse(exportData, {
+        delimiter: ';',
+        quotes: true,
+        skipEmptyLines: true
+      })
+
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
       const link = document.createElement('a')
       const url = URL.createObjectURL(blob)
@@ -195,8 +275,9 @@ const TicketTable = ({ data, filterMode = 'none', initialSearchTerm = '' }) => {
       link.click()
       document.body.removeChild(link)
       URL.revokeObjectURL(url)
+    } finally {
       setIsExporting(false)
-    }, 1000)
+    }
   }
 
   const getStatusColor = (status) => {
@@ -340,13 +421,14 @@ const TicketTable = ({ data, filterMode = 'none', initialSearchTerm = '' }) => {
               {sortedData.filter(t => t['Tempo para resolver excedido'] === 'Sim').length.toLocaleString('pt-BR')}
             </span>
           </div>
-          {(statusFilter !== 'all' || priorityFilter !== 'all' || dateFilter !== 'all' || technicianFilter !== 'all') && (
+          {(statusFilter !== 'all' || priorityFilter !== 'all' || dateFilter !== 'all' || technicianFilter !== 'all' || riskFilter !== 'all') && (
             <button
               onClick={() => {
                 setStatusFilter('all')
                 setPriorityFilter('all')
                 setDateFilter('all')
                 setTechnicianFilter('all')
+                setRiskFilter('all')
                 setSearchTerm('')
               }}
               className="ml-auto text-xs text-blue-400 hover:text-blue-300 underline"
@@ -423,10 +505,31 @@ const TicketTable = ({ data, filterMode = 'none', initialSearchTerm = '' }) => {
                 <option key={tech} value={tech}>{tech}</option>
               ))}
             </select>
+
+            <select
+              value={riskFilter}
+              onChange={(e) => setRiskFilter(e.target.value)}
+              className="px-3 py-2.5 bg-gray-700/50 border border-gray-600 rounded-lg text-gray-300 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:bg-gray-700 transition-colors min-w-[170px]"
+            >
+              <option value="all">🤖 Risco IA: Todos</option>
+              <option value="critical">🔥 Só críticos (70+)</option>
+            </select>
           </div>
         </div>
         
         <div className="flex items-center gap-4">
+          <button
+            onClick={() => {
+              setRiskFilter('critical')
+              setSortColumn('Risco IA')
+              setSortDirection('desc')
+              setCurrentPage(1)
+            }}
+            className="flex items-center gap-2 px-3 py-2 bg-red-600/20 text-red-300 rounded-lg hover:bg-red-600/30 hover:text-red-200 transition-colors text-sm border border-red-500/30"
+            title="Mostrar e ordenar os 20 chamados mais críticos"
+          >
+            🔥 Top 20 críticos
+          </button>
           <div className="text-sm text-gray-400">
             Mostrando {startIndex + 1}-{Math.min(endIndex, sortedData.length)} de {sortedData.length} chamados
           </div>
@@ -463,6 +566,7 @@ const TicketTable = ({ data, filterMode = 'none', initialSearchTerm = '' }) => {
             const timeElapsed = getTimeElapsed(ticket['Data de abertura'])
             const technician = ticket['Técnico responsável'] || ticket['Atribuído - Técnico'] || 'Não atribuído'
             const category = ticket.Categoria || ticket['Motivo'] || 'Não categorizado'
+            const mobileRisk = getRiskForTicket(ticket, 0)
             
             return (
               <div
@@ -480,6 +584,13 @@ const TicketTable = ({ data, filterMode = 'none', initialSearchTerm = '' }) => {
                         <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs font-semibold rounded border ${getPriorityColor(ticket.Prioridade)}`}>
                           {ticket.Prioridade}
                         </span>
+                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs font-semibold rounded border ${
+                          mobileRisk >= 70 ? 'bg-red-500/20 text-red-300 border-red-500/30' :
+                          mobileRisk >= 40 ? 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30' :
+                          'bg-green-500/20 text-green-300 border-green-500/30'
+                        }`}>
+                          🤖 {mobileRisk}
+                        </span>
                       </div>
                     </div>
                     <h3 className="font-medium text-white mb-1 line-clamp-2">{ticket.Título}</h3>
@@ -494,7 +605,9 @@ const TicketTable = ({ data, filterMode = 'none', initialSearchTerm = '' }) => {
                 <div className="flex flex-wrap items-center gap-2 mb-3">
                   <span className="inline-flex items-center gap-1 px-2 py-1 bg-purple-900/20 text-purple-300 rounded text-xs font-medium border border-purple-500/20">
                     <Tag className="h-3 w-3" />
-                    <span className="truncate max-w-[120px]">{category}</span>
+                    <span className="truncate max-w-[120px]" title={category}>
+                      {category}
+                    </span>
                   </span>
                   <div className="flex items-center gap-1 text-xs text-gray-400">
                     <User className="h-3 w-3" />
@@ -580,6 +693,19 @@ const TicketTable = ({ data, filterMode = 'none', initialSearchTerm = '' }) => {
                     )}
                   </div>
                 </th>
+                <th
+                  onClick={() => handleSort('Risco IA')}
+                  className="px-3 py-3 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-700/50 transition-colors"
+                >
+                  <div className="flex items-center gap-1">
+                    <span>Risco IA</span>
+                    {sortColumn === 'Risco IA' && (
+                      <span className="text-blue-400 text-xs">
+                        {sortDirection === 'asc' ? '↑' : '↓'}
+                      </span>
+                    )}
+                  </div>
+                </th>
                 <th className="px-3 py-3 text-center text-xs font-semibold text-gray-300 uppercase tracking-wider">
                   Ações
                 </th>
@@ -588,7 +714,7 @@ const TicketTable = ({ data, filterMode = 'none', initialSearchTerm = '' }) => {
             <tbody className="bg-gray-900/50 divide-y divide-gray-700/30">
               {currentData.length === 0 ? (
                 <tr>
-                  <td colSpan="6" className="px-4 py-12 text-center">
+                  <td colSpan="7" className="px-4 py-12 text-center">
                     <div className="flex flex-col items-center gap-3">
                       <Filter className="h-12 w-12 text-gray-600" />
                       <p className="text-gray-400 font-medium">Nenhum chamado encontrado</p>
@@ -601,6 +727,7 @@ const TicketTable = ({ data, filterMode = 'none', initialSearchTerm = '' }) => {
                   const timeElapsed = getTimeElapsed(ticket['Data de abertura'])
                   const technician = ticket['Técnico responsável'] || ticket['Atribuído - Técnico'] || 'Não atribuído'
                   const category = ticket.Categoria || ticket['Motivo'] || 'Não categorizado'
+                  const ticketRisk = getRiskForTicket(ticket, 0)
                   
                   return (
                     <tr 
@@ -664,6 +791,15 @@ const TicketTable = ({ data, filterMode = 'none', initialSearchTerm = '' }) => {
                             </span>
                           )}
                         </div>
+                      </td>
+                      <td className="px-3 py-3">
+                        <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-bold border ${
+                          ticketRisk >= 70 ? 'bg-red-500/20 text-red-300 border-red-500/30' :
+                          ticketRisk >= 40 ? 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30' :
+                          'bg-green-500/20 text-green-300 border-green-500/30'
+                        }`}>
+                          {ticketRisk}
+                        </span>
                       </td>
                       <td className="px-3 py-3 whitespace-nowrap text-center">
                         <button
