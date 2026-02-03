@@ -500,75 +500,6 @@ const TechnicianPerformance = ({ data }) => {
     return visibleWidgets.includes(widgetId)
   }
 
-  // Preparar dados para gráficos
-  const chartData = useMemo(() => {
-    if (!technicianStats) return { monthly: [], categories: [], radar: [] }
-
-    const monthly = technicianStats.monthlyData.map(month => ({
-      mês: month.month,
-      'SLA Compliance': month.compliance.toFixed(1),
-      'Tempo Médio (min)': Math.round(month.avgResolutionTime),
-      'Total Chamados': month.total,
-      'SLA Atendido': month.slaMet,
-      'SLA Excedido': month.slaExceeded
-    }))
-
-    const categories = Object.entries(technicianStats.categoryStats)
-      .sort(([_, a], [__, b]) => b.total - a.total)
-      .slice(0, 8)
-      .map(([name, stats]) => ({
-        name: name.length > 20 ? name.substring(0, 20) + '...' : name,
-        total: stats.total,
-        compliance: stats.compliance,
-        'Tempo Médio': Math.round(stats.avgTime)
-      }))
-
-    // Dados para gráfico radar - Top 6 categorias
-    const radarData = Object.entries(technicianStats.categoryStats)
-      .sort(([_, a], [__, b]) => b.total - a.total)
-      .slice(0, 6)
-      .map(([name, stats]) => {
-        // Score baseado em compliance e volume (normalizado para 0-100)
-        const complianceScore = stats.compliance // já está em %
-        const volumeScore = Math.min((stats.total / 20) * 100, 100) // máximo 100 para 20+ chamados
-        const avgScore = (complianceScore + volumeScore) / 2
-        
-        return {
-          category: name.length > 15 ? name.substring(0, 15) + '...' : name,
-          compliance: Math.round(stats.compliance),
-          volume: Math.round(volumeScore),
-          efficiency: Math.round(avgScore)
-        }
-      })
-
-    // Formatar para Recharts Radar (precisa de formato específico)
-    const radarChartData = radarData.length > 0 ? [
-      {
-        subject: 'Compliance',
-        ...radarData.reduce((acc, item, idx) => {
-          acc[item.category] = item.compliance
-          return acc
-        }, {})
-      },
-      {
-        subject: 'Volume',
-        ...radarData.reduce((acc, item, idx) => {
-          acc[item.category] = item.volume
-          return acc
-        }, {})
-      },
-      {
-        subject: 'Eficiência',
-        ...radarData.reduce((acc, item, idx) => {
-          acc[item.category] = item.efficiency
-          return acc
-        }, {})
-      }
-    ] : []
-
-    return { monthly, categories, radar: radarData, radarChart: radarChartData }
-  }, [technicianStats])
-
   // Se nenhum técnico selecionado, mostrar seleção
   if (!selectedTechnician) {
     return (
@@ -971,86 +902,6 @@ const TechnicianPerformance = ({ data }) => {
             </div>
           )}
 
-          {/* Evolução Temporal */}
-          {isWidgetVisible('timeline') && chartData.monthly.length > 0 && (
-            <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 border border-gray-700/50 shadow-md">
-              <h4 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                <TrendingUp className="h-6 w-6 text-purple-400" />
-                Evolução Mensal
-              </h4>
-              <ResponsiveContainer width="100%" height={350}>
-                <RechartsLineChart data={chartData.monthly}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                  <XAxis dataKey="mês" stroke="#9ca3af" />
-                  <YAxis yAxisId="left" stroke="#9ca3af" label={{ value: 'SLA Compliance (%)', angle: -90, position: 'insideLeft', style: { fill: '#9ca3af' } }} />
-                  <YAxis yAxisId="right" orientation="right" stroke="#f59e0b" label={{ value: 'Tempo (min)', angle: 90, position: 'insideRight', style: { fill: '#f59e0b' } }} />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: '#1f2937',
-                      border: '1px solid #374151',
-                      borderRadius: '8px',
-                      color: '#fff'
-                    }}
-                  />
-                  <Legend />
-                  <Line
-                    yAxisId="left"
-                    type="monotone"
-                    dataKey="SLA Compliance"
-                    stroke="#3b82f6"
-                    strokeWidth={3}
-                    dot={{ r: 5, fill: '#3b82f6' }}
-                    name="SLA Compliance (%)"
-                  />
-                  <Line
-                    yAxisId="right"
-                    type="monotone"
-                    dataKey="Tempo Médio (min)"
-                    stroke="#f59e0b"
-                    strokeWidth={2}
-                    dot={{ r: 4, fill: '#f59e0b' }}
-                    name="Tempo Médio (min)"
-                    strokeDasharray="5 5"
-                  />
-                </RechartsLineChart>
-              </ResponsiveContainer>
-            </div>
-          )}
-
-          {/* Performance por Categoria */}
-          {isWidgetVisible('categories') && chartData.categories.length > 0 && (
-            <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 border border-gray-700/50 shadow-md">
-              <h4 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                <PieChart className="h-6 w-6 text-pink-400" />
-                Performance por Categoria
-              </h4>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div>
-                  <ResponsiveContainer width="100%" height={300}>
-                    <RechartsBarChart data={chartData.categories}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                      <XAxis dataKey="name" stroke="#9ca3af" angle={-45} textAnchor="end" height={100} />
-                      <YAxis stroke="#9ca3af" />
-                      <Tooltip
-                        contentStyle={{
-                          backgroundColor: '#1f2937',
-                          border: '1px solid #374151',
-                          borderRadius: '8px',
-                          color: '#fff'
-                        }}
-                      />
-                      <Legend />
-                      <Bar dataKey="total" fill="#3b82f6" name="Total Chamados" />
-                      <Bar dataKey="compliance" fill="#10b981" name="SLA Compliance (%)" />
-                    </RechartsBarChart>
-                  </ResponsiveContainer>
-                </div>
-                <div className="space-y-3">
-                  {chartData.categories.slice(0, 5).map((cat, idx) => (
-                    <div key={idx} className="p-4 bg-gray-700/50 rounded-lg">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-white font-semibold">{cat.name}</span>
-                        <span className={`text-sm font-bold ${
           {/* Relatório Personalizado */}
           {isWidgetVisible('report') && (
             <PerformanceReport
@@ -1069,4 +920,3 @@ const TechnicianPerformance = ({ data }) => {
 }
 
 export default TechnicianPerformance
-

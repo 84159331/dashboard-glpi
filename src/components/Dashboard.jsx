@@ -43,6 +43,10 @@ const Dashboard = ({ data, columns, onReset }) => {
             onClickAllTickets={() => { setViewMode('table'); setTableFilterMode('all'); setTableInitialSearch('') }}
             onClickSlaMet={() => { setViewMode('table'); setTableFilterMode('slaMet'); setTableInitialSearch('') }}
             onClickSlaExceeded={() => { setViewMode('table'); setTableFilterMode('slaExceeded'); setTableInitialSearch('') }}
+            onClickCategoryOpen={(category) => { setViewMode('table'); setTableFilterMode('open'); setTableInitialSearch(category || '') }}
+            onClickCategorySlaExceeded={(category) => { setViewMode('table'); setTableFilterMode('slaExceeded'); setTableInitialSearch(category || '') }}
+            onClickUserOpen={(user) => { setViewMode('table'); setTableFilterMode('open'); setTableInitialSearch(user || '') }}
+            onClickUserSlaMet={(user) => { setViewMode('table'); setTableFilterMode('slaMet'); setTableInitialSearch(user || '') }}
           />
         )
       case 'charts':
@@ -74,7 +78,19 @@ const Dashboard = ({ data, columns, onReset }) => {
           </ErrorBoundary>
         )
       default:
-        return <TicketStats data={data} />
+        return (
+          <TicketStats
+            data={data}
+            onClickOpenTickets={() => { setViewMode('table'); setTableFilterMode('open'); setTableInitialSearch('') }}
+            onClickAllTickets={() => { setViewMode('table'); setTableFilterMode('all'); setTableInitialSearch('') }}
+            onClickSlaMet={() => { setViewMode('table'); setTableFilterMode('slaMet'); setTableInitialSearch('') }}
+            onClickSlaExceeded={() => { setViewMode('table'); setTableFilterMode('slaExceeded'); setTableInitialSearch('') }}
+            onClickCategoryOpen={(category) => { setViewMode('table'); setTableFilterMode('open'); setTableInitialSearch(category || '') }}
+            onClickCategorySlaExceeded={(category) => { setViewMode('table'); setTableFilterMode('slaExceeded'); setTableInitialSearch(category || '') }}
+            onClickUserOpen={(user) => { setViewMode('table'); setTableFilterMode('open'); setTableInitialSearch(user || '') }}
+            onClickUserSlaMet={(user) => { setViewMode('table'); setTableFilterMode('slaMet'); setTableInitialSearch(user || '') }}
+          />
+        )
     }
   }
 
@@ -301,28 +317,62 @@ const Dashboard = ({ data, columns, onReset }) => {
       </div>
 
       {/* Insights */}
-      <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
-        <h3 className="text-lg font-semibold text-white mb-4">
-          Insights e Recomendações
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-3">
-            <h4 className="font-medium text-white">Métricas de Performance</h4>
-            <ul className="text-sm text-gray-400 space-y-1">
-              <li>• Tempo médio de resolução dos chamados</li>
-              <li>• Taxa de resolução no primeiro contato</li>
-              <li>• Compliance com SLAs estabelecidos</li>
-              <li>• Distribuição de carga por técnico</li>
-            </ul>
+      <div className="bg-gradient-to-br from-gray-800/90 to-gray-900/90 backdrop-blur-sm rounded-xl p-6 md:p-8 border border-gray-700/60 shadow-xl">
+        <div className="flex items-center justify-between gap-4 mb-6">
+          <div>
+            <h3 className="text-xl md:text-2xl font-bold text-white">Insights e Recomendações</h3>
+            <p className="text-sm text-gray-400 mt-1">Resumo rápido do que acompanhar e do que fazer em seguida</p>
           </div>
-          <div className="space-y-3">
-            <h4 className="font-medium text-white">Ações Recomendadas</h4>
-            <ul className="text-sm text-gray-400 space-y-1">
-              <li>• Identificar categorias com maior volume</li>
-              <li>• Analisar chamados que excedem SLA</li>
-              <li>• Otimizar processos para redução de tempo</li>
-              <li>• Treinamento em categorias problemáticas</li>
-            </ul>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+          <div className="bg-white/5 rounded-xl p-5 border border-white/10">
+            <h4 className="text-base font-bold text-white mb-3">Métricas que importam</h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="bg-gray-800/40 rounded-lg p-3 border border-gray-700/50">
+                <p className="text-xs text-gray-400">Resolução</p>
+                <p className="text-sm text-gray-200 font-semibold mt-1">Tempo (mediana e p90)</p>
+              </div>
+              <div className="bg-gray-800/40 rounded-lg p-3 border border-gray-700/50">
+                <p className="text-xs text-gray-400">SLA</p>
+                <p className="text-sm text-gray-200 font-semibold mt-1">Atendido vs Extrapolado</p>
+              </div>
+              <div className="bg-gray-800/40 rounded-lg p-3 border border-gray-700/50">
+                <p className="text-xs text-gray-400">Backlog</p>
+                <p className="text-sm text-gray-200 font-semibold mt-1">Abertos e envelhecidos</p>
+              </div>
+              <div className="bg-gray-800/40 rounded-lg p-3 border border-gray-700/50">
+                <p className="text-xs text-gray-400">Distribuição</p>
+                <p className="text-sm text-gray-200 font-semibold mt-1">Carga por técnico</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white/5 rounded-xl p-5 border border-white/10">
+            <h4 className="text-base font-bold text-white mb-3">Ações recomendadas</h4>
+            <div className="space-y-3">
+              <div className="flex items-start gap-3 bg-gray-800/40 rounded-lg p-3 border border-gray-700/50">
+                <div className="mt-0.5 w-2 h-2 rounded-full bg-orange-400"></div>
+                <div>
+                  <p className="text-sm text-white font-semibold">Atacar SLAs extrapolados</p>
+                  <p className="text-xs text-gray-400 mt-0.5">Priorize as categorias com maior extrapolação.</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3 bg-gray-800/40 rounded-lg p-3 border border-gray-700/50">
+                <div className="mt-0.5 w-2 h-2 rounded-full bg-purple-400"></div>
+                <div>
+                  <p className="text-sm text-white font-semibold">Reduzir backlog antigo</p>
+                  <p className="text-xs text-gray-400 mt-0.5">Limpe chamados envelhecidos para reduzir risco.</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3 bg-gray-800/40 rounded-lg p-3 border border-gray-700/50">
+                <div className="mt-0.5 w-2 h-2 rounded-full bg-emerald-400"></div>
+                <div>
+                  <p className="text-sm text-white font-semibold">Padronizar soluções</p>
+                  <p className="text-xs text-gray-400 mt-0.5">Crie checklists nas categorias recorrentes.</p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -330,4 +380,4 @@ const Dashboard = ({ data, columns, onReset }) => {
   )
 }
 
-export default Dashboard 
+export default Dashboard

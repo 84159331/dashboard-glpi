@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react'
+
 import { 
   Clock, 
   CheckCircle, 
@@ -16,7 +17,18 @@ import {
   Activity
 } from 'lucide-react'
 
-const TicketStats = ({ data, onClickOpenTickets, onClickAllTickets, onClickSlaMet, onClickSlaExceeded }) => {
+const TicketStats = ({
+  data,
+  onClickOpenTickets = () => {},
+  onClickAllTickets = () => {},
+  onClickSlaMet = () => {},
+  onClickSlaExceeded = () => {},
+  onClickCategoryOpen = () => {},
+  onClickCategorySlaExceeded = () => {},
+  onClickUserOpen = () => {},
+  onClickUserSlaMet = () => {}
+}) => {
+
   const stats = useMemo(() => {
     if (!data || data.length === 0) return {}
 
@@ -25,15 +37,19 @@ const TicketStats = ({ data, onClickOpenTickets, onClickAllTickets, onClickSlaMe
       ticket.Status === 'Solucionado' || ticket.Status === 'Fechado'
     ).length
     const openTickets = totalTickets - resolvedTickets
-    
+
+    const openTicketsList = data.filter(ticket =>
+      ticket.Status !== 'Solucionado' && ticket.Status !== 'Fechado'
+    )
+
     // Calcular SLA atendido e extrapolado
     const slaExceeded = data.filter(ticket => 
       ticket['Tempo para resolver excedido'] === 'Sim'
     ).length
     const slaMet = totalTickets - slaExceeded
 
-    // Análise por categoria/motivo
-    const categoryStats = data.reduce((acc, ticket) => {
+    // Análise por categoria/motivo (apenas abertos)
+    const categoryStats = openTicketsList.reduce((acc, ticket) => {
       const category = ticket.Categoria || ticket['Motivo'] || 'Não categorizado'
       acc[category] = (acc[category] || 0) + 1
       return acc
@@ -44,8 +60,8 @@ const TicketStats = ({ data, onClickOpenTickets, onClickAllTickets, onClickSlaMe
       .sort(([,a], [,b]) => b - a)
       .slice(0, 8)
 
-    // Análise por usuário/técnico
-    const userStats = data.reduce((acc, ticket) => {
+    // Análise por usuário/técnico (apenas abertos)
+    const userStats = openTicketsList.reduce((acc, ticket) => {
       const user = ticket['Técnico responsável'] || ticket['Usuário'] || 'Não atribuído'
       acc[user] = (acc[user] || 0) + 1
       return acc
@@ -216,21 +232,31 @@ const TicketStats = ({ data, onClickOpenTickets, onClickAllTickets, onClickSlaMe
             <Sparkles className="h-5 w-5 text-blue-400" />
             Total em Aberto por Categoria
           </h3>
-          <div className="space-y-3">
+          <div className="space-y-2">
             {stats.topCategories && stats.topCategories.length > 0 ? (
               stats.topCategories.map(([category, count], index) => (
-                <div key={index} className="flex items-center justify-between p-3 bg-white/5 rounded-lg hover:bg-white/10 transition-colors">
-                  <span className="text-sm text-gray-300 truncate max-w-xs font-medium">{category}</span>
-                  <div className="flex items-center gap-3">
-                    <div className="w-32 bg-gray-700/50 rounded-full h-3 overflow-hidden">
-                      <div 
-                        className="bg-gradient-to-r from-orange-500 to-red-500 h-3 rounded-full transition-all duration-500"
-                        style={{ width: `${(count / stats.topCategories[0][1]) * 100}%` }}
-                      ></div>
+                <button
+                  key={index}
+                  type="button"
+                  onClick={() => onClickCategoryOpen(category)}
+                  className="w-full text-left flex items-center gap-4 p-3.5 bg-white/5 rounded-lg hover:bg-white/10 transition-colors border border-transparent hover:border-white/10"
+                  title="Abrir chamados desta categoria"
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-3">
+                      <span className="text-sm text-gray-200 font-semibold leading-snug line-clamp-2" title={category}>{category}</span>
+                      <span className="shrink-0 text-xs font-bold text-orange-200 bg-orange-500/20 border border-orange-500/30 px-2 py-0.5 rounded-md">
+                        {count}
+                      </span>
                     </div>
-                    <span className="text-sm font-bold text-orange-400 min-w-[2rem]">{count}</span>
+                    <div className="mt-2 w-full bg-gray-700/60 rounded-full h-2.5 overflow-hidden">
+                      <div
+                        className="bg-gradient-to-r from-orange-500 to-red-500 h-2.5 rounded-full transition-all duration-500"
+                        style={{ width: `${(count / stats.topCategories[0][1]) * 100}%` }}
+                      />
+                    </div>
                   </div>
-                </div>
+                </button>
               ))
             ) : (
               <p className="text-gray-400 text-sm">Nenhum dado disponível</p>
@@ -290,18 +316,26 @@ const TicketStats = ({ data, onClickOpenTickets, onClickAllTickets, onClickSlaMe
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {stats.topSlaExceededCategories && stats.topSlaExceededCategories.length > 0 ? (
             stats.topSlaExceededCategories.map(([category, count], index) => (
-              <div key={index} className="flex items-center justify-between p-3 bg-white/5 rounded-lg hover:bg-white/10 transition-colors">
-                <span className="text-sm text-gray-300 truncate max-w-xs font-medium">{category}</span>
-                <div className="flex items-center gap-3">
-                  <div className="w-24 bg-gray-700/50 rounded-full h-3 overflow-hidden">
-                    <div 
-                      className="bg-gradient-to-r from-red-500 to-rose-500 h-3 rounded-full transition-all duration-500"
-                      style={{ width: `${(count / (stats.topSlaExceededCategories[0]?.[1] || 1)) * 100}%` }}
-                    ></div>
-                  </div>
-                  <span className="text-sm font-bold text-red-400 min-w-[2rem]">{count}</span>
+              <button
+                key={index}
+                type="button"
+                onClick={() => onClickCategorySlaExceeded(category)}
+                className="w-full text-left p-3.5 bg-white/5 rounded-lg hover:bg-white/10 transition-colors border border-transparent hover:border-white/10"
+                title="Abrir chamados com SLA extrapolado nesta categoria"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <span className="text-sm text-gray-200 font-semibold leading-snug line-clamp-2" title={category}>{category}</span>
+                  <span className="shrink-0 text-xs font-bold text-red-200 bg-red-500/20 border border-red-500/30 px-2 py-0.5 rounded-md">
+                    {count}
+                  </span>
                 </div>
-              </div>
+                <div className="mt-2 w-full bg-gray-700/60 rounded-full h-2.5 overflow-hidden">
+                  <div
+                    className="bg-gradient-to-r from-red-500 to-rose-500 h-2.5 rounded-full transition-all duration-500"
+                    style={{ width: `${(count / (stats.topSlaExceededCategories[0]?.[1] || 1)) * 100}%` }}
+                  />
+                </div>
+              </button>
             ))
           ) : (
             <p className="text-gray-400 text-sm">Nenhum SLA extrapolado encontrado</p>
@@ -316,21 +350,29 @@ const TicketStats = ({ data, onClickOpenTickets, onClickAllTickets, onClickSlaMe
             <Users className="h-5 w-5 text-orange-400" />
             Total em Aberto por Usuário
           </h3>
-          <div className="space-y-3">
+          <div className="space-y-2">
             {stats.topUsersOpen && stats.topUsersOpen.length > 0 ? (
               stats.topUsersOpen.map(([user, count], index) => (
-                <div key={index} className="flex items-center justify-between p-3 bg-white/5 rounded-lg hover:bg-white/10 transition-colors">
-                  <span className="text-sm text-gray-300 font-medium">{user}</span>
-                  <div className="flex items-center gap-3">
-                    <div className="w-24 bg-gray-700/50 rounded-full h-3 overflow-hidden">
-                      <div 
-                        className="bg-gradient-to-r from-orange-500 to-red-500 h-3 rounded-full transition-all duration-500"
-                        style={{ width: `${(count / (stats.topUsersOpen[0]?.[1] || 1)) * 100}%` }}
-                      ></div>
-                    </div>
-                    <span className="text-sm font-bold text-orange-400 min-w-[2rem]">{count}</span>
+                <button
+                  key={index}
+                  type="button"
+                  onClick={() => onClickUserOpen(user)}
+                  className="w-full text-left p-3.5 bg-white/5 rounded-lg hover:bg-white/10 transition-colors border border-transparent hover:border-white/10"
+                  title="Abrir chamados em aberto deste usuário"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <span className="text-sm text-gray-200 font-semibold leading-snug line-clamp-2" title={user}>{user}</span>
+                    <span className="shrink-0 text-xs font-bold text-orange-200 bg-orange-500/20 border border-orange-500/30 px-2 py-0.5 rounded-md">
+                      {count}
+                    </span>
                   </div>
-                </div>
+                  <div className="mt-2 w-full bg-gray-700/60 rounded-full h-2.5 overflow-hidden">
+                    <div
+                      className="bg-gradient-to-r from-orange-500 to-red-500 h-2.5 rounded-full transition-all duration-500"
+                      style={{ width: `${(count / (stats.topUsersOpen[0]?.[1] || 1)) * 100}%` }}
+                    />
+                  </div>
+                </button>
               ))
             ) : (
               <p className="text-gray-400 text-sm">Nenhum dado disponível</p>
@@ -343,21 +385,29 @@ const TicketStats = ({ data, onClickOpenTickets, onClickAllTickets, onClickSlaMe
             <Award className="h-5 w-5 text-green-400" />
             SLA Atendido por Usuário
           </h3>
-          <div className="space-y-3">
+          <div className="space-y-2">
             {stats.topUsersSlaMet && stats.topUsersSlaMet.length > 0 ? (
               stats.topUsersSlaMet.map(([user, count], index) => (
-                <div key={index} className="flex items-center justify-between p-3 bg-white/5 rounded-lg hover:bg-white/10 transition-colors">
-                  <span className="text-sm text-gray-300 font-medium">{user}</span>
-                  <div className="flex items-center gap-3">
-                    <div className="w-24 bg-gray-700/50 rounded-full h-3 overflow-hidden">
-                      <div 
-                        className="bg-gradient-to-r from-green-500 to-emerald-500 h-3 rounded-full transition-all duration-500"
-                        style={{ width: `${(count / (stats.topUsersSlaMet[0]?.[1] || 1)) * 100}%` }}
-                      ></div>
-                    </div>
-                    <span className="text-sm font-bold text-green-400 min-w-[2rem]">{count}</span>
+                <button
+                  key={index}
+                  type="button"
+                  onClick={() => onClickUserSlaMet(user)}
+                  className="w-full text-left p-3.5 bg-white/5 rounded-lg hover:bg-white/10 transition-colors border border-transparent hover:border-white/10"
+                  title="Abrir chamados com SLA atendido deste usuário"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <span className="text-sm text-gray-200 font-semibold leading-snug line-clamp-2" title={user}>{user}</span>
+                    <span className="shrink-0 text-xs font-bold text-emerald-200 bg-emerald-500/20 border border-emerald-500/30 px-2 py-0.5 rounded-md">
+                      {count}
+                    </span>
                   </div>
-                </div>
+                  <div className="mt-2 w-full bg-gray-700/60 rounded-full h-2.5 overflow-hidden">
+                    <div
+                      className="bg-gradient-to-r from-green-500 to-emerald-500 h-2.5 rounded-full transition-all duration-500"
+                      style={{ width: `${(count / (stats.topUsersSlaMet[0]?.[1] || 1)) * 100}%` }}
+                    />
+                  </div>
+                </button>
               ))
             ) : (
               <p className="text-gray-400 text-sm">Nenhum dado disponível</p>
@@ -369,4 +419,4 @@ const TicketStats = ({ data, onClickOpenTickets, onClickAllTickets, onClickSlaMe
   )
 }
 
-export default TicketStats 
+export default TicketStats

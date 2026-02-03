@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { ArrowLeft, BarChart3, Headphones, Activity, Bell, Settings } from 'lucide-react'
+import { ArrowLeft, BarChart3, Headphones, Activity, Bell, Settings, Database } from 'lucide-react'
 import ThemeToggle from './ThemeToggle'
 
 const Header = ({ onHomeClick, onViewChange, currentView }) => {
@@ -55,6 +55,18 @@ const Header = ({ onHomeClick, onViewChange, currentView }) => {
               >
                 SLA de Atendimento
               </button>
+
+              <div className="w-px h-6 bg-gray-700/60 mx-1"></div>
+
+              <button
+                onClick={() => onViewChange('integration')}
+                className={`text-sm font-semibold transition-colors duration-300 whitespace-nowrap ${
+                  currentView === 'integration' ? 'text-emerald-300' : 'text-gray-200 hover:text-emerald-300'
+                }`}
+                title="Integração GLPI"
+              >
+                Integração GLPI
+              </button>
             </div>
             
           </div>
@@ -71,6 +83,19 @@ const Header = ({ onHomeClick, onViewChange, currentView }) => {
                 }`}
               >
                 SLA
+              </button>
+
+              <button
+                onClick={() => onViewChange('integration')}
+                className={`px-3 py-1.5 text-sm font-semibold rounded-lg transition-all duration-300 inline-flex items-center gap-2 ${
+                  currentView === 'integration'
+                    ? 'bg-emerald-600 text-white shadow-glow'
+                    : 'bg-gray-700/50 text-gray-300 hover:bg-gray-700'
+                }`}
+                title="Integração GLPI"
+              >
+                <Database className="h-4 w-4" />
+                GLPI
               </button>
             </div>
           </div>

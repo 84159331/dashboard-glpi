@@ -20,6 +20,20 @@ const TicketTable = ({ data, filterMode = 'none', initialSearchTerm = '' }) => {
   const [isExporting, setIsExporting] = useState(false)
   const itemsPerPage = 50
 
+  const glpiBaseUrl = useMemo(() => {
+    try {
+      const raw = localStorage.getItem('dashboard-glpi-baseUrl')
+      return typeof raw === 'string' && raw.trim().length ? raw.trim().replace(/\/+$/, '') : ''
+    } catch {
+      return ''
+    }
+  }, [])
+
+  const getGlpiTicketUrl = (ticketId) => {
+    if (!glpiBaseUrl || !ticketId) return null
+    return `${glpiBaseUrl}/front/ticket.form.php?id=${encodeURIComponent(String(ticketId))}`
+  }
+
   useEffect(() => {
     setCurrentPage(1)
   }, [filterMode])
@@ -370,57 +384,48 @@ const TicketTable = ({ data, filterMode = 'none', initialSearchTerm = '' }) => {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* Header Modernizado */}
-      <div className="bg-gradient-to-r from-cyan-600/20 via-blue-600/20 to-indigo-600/20 backdrop-blur-sm rounded-xl p-6 md:p-8 border border-cyan-500/30 shadow-glow">
+      <div className="bg-gradient-to-r from-cyan-600/15 via-blue-600/15 to-indigo-600/15 backdrop-blur-sm rounded-xl p-5 md:p-6 border border-cyan-500/20 shadow-glow">
         <div className="text-center">
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <div className="p-3 bg-gradient-to-br from-cyan-500 to-blue-500 rounded-xl shadow-lg">
-              <Table className="h-8 w-8 text-white" />
+          <div className="flex items-center justify-center gap-3 mb-3">
+            <div className="p-2.5 bg-gradient-to-br from-cyan-500 to-blue-500 rounded-xl shadow-lg">
+              <Table className="h-7 w-7 text-white" />
             </div>
-            <h3 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-cyan-400 via-blue-400 to-indigo-400 bg-clip-text text-transparent">
+            <h3 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-cyan-400 via-blue-400 to-indigo-400 bg-clip-text text-transparent">
               Tabela de Chamados
             </h3>
           </div>
-          <p className="text-gray-300 text-base md:text-lg max-w-2xl mx-auto">
+          <p className="text-gray-300 text-sm md:text-base max-w-2xl mx-auto">
             Visualize, filtre e analise todos os chamados com busca avançada e múltiplos filtros
           </p>
           {sortedData.length > 0 && (
-            <div className="mt-4 flex items-center justify-center gap-6 text-sm text-gray-400">
-              <div className="flex items-center gap-2">
+            <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-xs text-gray-300">
+              <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10">
                 <Sparkles className="h-4 w-4 text-cyan-400" />
-                <span>{sortedData.length.toLocaleString('pt-BR')} chamados encontrados</span>
-              </div>
-              <div className="flex items-center gap-2">
+                <span>{sortedData.length.toLocaleString('pt-BR')} encontrados</span>
+              </span>
+              <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10">
                 <BarChart3 className="h-4 w-4 text-blue-400" />
-                <span>{Math.ceil(sortedData.length / itemsPerPage)} página{Math.ceil(sortedData.length / itemsPerPage) !== 1 ? 's' : ''}</span>
-              </div>
+                <span>{Math.ceil(sortedData.length / itemsPerPage)} pág.</span>
+              </span>
             </div>
           )}
         </div>
       </div>
 
-      {/* Resumo de Filtros */}
-      <div className="bg-gray-800/50 backdrop-blur-sm rounded-lg p-4 border border-gray-700/50 mb-4">
-        <div className="flex flex-wrap items-center gap-4 text-sm">
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-            <span className="text-gray-300">Total:</span>
+      <div className="bg-gray-800/40 backdrop-blur-sm rounded-xl p-4 border border-gray-700/50">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-sm">
+            <span className="text-gray-300">Total</span>
             <span className="text-white font-semibold">{sortedData.length.toLocaleString('pt-BR')}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-            <span className="text-gray-300">No Prazo:</span>
-            <span className="text-green-400 font-semibold">
-              {sortedData.filter(t => t['Tempo para resolver excedido'] !== 'Sim').length.toLocaleString('pt-BR')}
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-            <span className="text-gray-300">Excedidos:</span>
-            <span className="text-red-400 font-semibold">
-              {sortedData.filter(t => t['Tempo para resolver excedido'] === 'Sim').length.toLocaleString('pt-BR')}
-            </span>
-          </div>
+          </span>
+          <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-green-500/10 border border-green-500/20 text-sm">
+            <span className="text-gray-300">No prazo</span>
+            <span className="text-green-300 font-semibold">{sortedData.filter(t => t['Tempo para resolver excedido'] !== 'Sim').length.toLocaleString('pt-BR')}</span>
+          </span>
+          <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-500/10 border border-red-500/20 text-sm">
+            <span className="text-gray-300">Excedidos</span>
+            <span className="text-red-300 font-semibold">{sortedData.filter(t => t['Tempo para resolver excedido'] === 'Sim').length.toLocaleString('pt-BR')}</span>
+          </span>
           {(statusFilter !== 'all' || priorityFilter !== 'all' || dateFilter !== 'all' || technicianFilter !== 'all' || riskFilter !== 'all') && (
             <button
               onClick={() => {
@@ -431,7 +436,7 @@ const TicketTable = ({ data, filterMode = 'none', initialSearchTerm = '' }) => {
                 setRiskFilter('all')
                 setSearchTerm('')
               }}
-              className="ml-auto text-xs text-blue-400 hover:text-blue-300 underline"
+              className="ml-auto text-xs text-blue-300 hover:text-blue-200 underline"
             >
               Limpar Filtros
             </button>
@@ -439,17 +444,16 @@ const TicketTable = ({ data, filterMode = 'none', initialSearchTerm = '' }) => {
         </div>
       </div>
 
-      {/* Controles da tabela */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-        <div className="flex flex-col sm:flex-row gap-3">
-          <div className="relative flex-1 sm:flex-none sm:w-64">
+      <div className="bg-gray-800/40 backdrop-blur-sm rounded-xl p-4 border border-gray-700/50">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
+          <div className="lg:col-span-4 relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <input
               type="text"
               placeholder="Buscar em todos os campos..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 bg-gray-700/50 border border-gray-600 rounded-lg text-gray-300 placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+              className="w-full pl-10 pr-9 py-2.5 bg-gray-900/30 border border-gray-700/60 rounded-lg text-gray-200 placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
             />
             {searchTerm && (
               <button
@@ -460,100 +464,81 @@ const TicketTable = ({ data, filterMode = 'none', initialSearchTerm = '' }) => {
               </button>
             )}
           </div>
-          
-          <div className="flex flex-wrap gap-2">
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-3 py-2.5 bg-gray-700/50 border border-gray-600 rounded-lg text-gray-300 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:bg-gray-700 transition-colors"
-            >
+
+          <div className="lg:col-span-6 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="px-3 py-2.5 bg-gray-900/30 border border-gray-700/60 rounded-lg text-gray-200 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:bg-gray-900/40 transition-colors">
               <option value="all">📊 Todos os Status</option>
               <option value="Solucionado">✅ Solucionado</option>
               <option value="Fechado">🔒 Fechado</option>
               <option value="Em andamento">⚙️ Em andamento</option>
             </select>
-            
-            <select
-              value={priorityFilter}
-              onChange={(e) => setPriorityFilter(e.target.value)}
-              className="px-3 py-2.5 bg-gray-700/50 border border-gray-600 rounded-lg text-gray-300 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:bg-gray-700 transition-colors"
-            >
+
+            <select value={priorityFilter} onChange={(e) => setPriorityFilter(e.target.value)} className="px-3 py-2.5 bg-gray-900/30 border border-gray-700/60 rounded-lg text-gray-200 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:bg-gray-900/40 transition-colors">
               <option value="all">🎯 Todas as Prioridades</option>
               <option value="Alta">🔴 Alta</option>
               <option value="Média">🟡 Média</option>
               <option value="Baixa">🟢 Baixa</option>
             </select>
-            
-            <select
-              value={dateFilter}
-              onChange={(e) => setDateFilter(e.target.value)}
-              className="px-3 py-2.5 bg-gray-700/50 border border-gray-600 rounded-lg text-gray-300 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:bg-gray-700 transition-colors"
-            >
+
+            <select value={dateFilter} onChange={(e) => setDateFilter(e.target.value)} className="px-3 py-2.5 bg-gray-900/30 border border-gray-700/60 rounded-lg text-gray-200 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:bg-gray-900/40 transition-colors">
               <option value="all">📅 Todas as Datas</option>
               <option value="today">📆 Hoje</option>
               <option value="week">📆 Última Semana</option>
               <option value="month">📆 Último Mês</option>
             </select>
-            
-            <select
-              value={technicianFilter}
-              onChange={(e) => setTechnicianFilter(e.target.value)}
-              className="px-3 py-2.5 bg-gray-700/50 border border-gray-600 rounded-lg text-gray-300 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:bg-gray-700 transition-colors min-w-[150px]"
-            >
+
+            <select value={technicianFilter} onChange={(e) => setTechnicianFilter(e.target.value)} className="px-3 py-2.5 bg-gray-900/30 border border-gray-700/60 rounded-lg text-gray-200 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:bg-gray-900/40 transition-colors">
               <option value="all">👤 Todos os Técnicos</option>
               {technicians.map(tech => (
                 <option key={tech} value={tech}>{tech}</option>
               ))}
             </select>
 
-            <select
-              value={riskFilter}
-              onChange={(e) => setRiskFilter(e.target.value)}
-              className="px-3 py-2.5 bg-gray-700/50 border border-gray-600 rounded-lg text-gray-300 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:bg-gray-700 transition-colors min-w-[170px]"
-            >
+            <select value={riskFilter} onChange={(e) => setRiskFilter(e.target.value)} className="px-3 py-2.5 bg-gray-900/30 border border-gray-700/60 rounded-lg text-gray-200 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:bg-gray-900/40 transition-colors">
               <option value="all">🤖 Risco IA: Todos</option>
               <option value="critical">🔥 Só críticos (70+)</option>
             </select>
           </div>
-        </div>
-        
-        <div className="flex items-center gap-4">
-          <button
-            onClick={() => {
-              setRiskFilter('critical')
-              setSortColumn('Risco IA')
-              setSortDirection('desc')
-              setCurrentPage(1)
-            }}
-            className="flex items-center gap-2 px-3 py-2 bg-red-600/20 text-red-300 rounded-lg hover:bg-red-600/30 hover:text-red-200 transition-colors text-sm border border-red-500/30"
-            title="Mostrar e ordenar os 20 chamados mais críticos"
-          >
-            🔥 Top 20 críticos
-          </button>
-          <div className="text-sm text-gray-400">
-            Mostrando {startIndex + 1}-{Math.min(endIndex, sortedData.length)} de {sortedData.length} chamados
+
+          <div className="lg:col-span-2 flex flex-col sm:flex-row lg:flex-col gap-2 lg:items-stretch">
+            <button
+              onClick={() => {
+                setRiskFilter('critical')
+                setSortColumn('Risco IA')
+                setSortDirection('desc')
+                setCurrentPage(1)
+              }}
+              className="flex items-center justify-center gap-2 px-3 py-2.5 bg-red-600/15 text-red-200 rounded-lg hover:bg-red-600/25 hover:text-red-100 transition-colors text-sm border border-red-500/20"
+              title="Mostrar e ordenar os 20 chamados mais críticos"
+            >
+              🔥 Top 20 críticos
+            </button>
+
+            <button
+              onClick={handleExportData}
+              disabled={isExporting || filteredData.length === 0}
+              className="flex items-center justify-center gap-2 px-3 py-2.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50 transition-colors text-sm"
+            >
+              {isExporting ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  Exportando...
+                </>
+              ) : (
+                <>
+                  <Download className="h-4 w-4" />
+                  Exportar CSV
+                </>
+              )}
+            </button>
+
+            <div className="text-xs text-gray-400 lg:text-center">
+              {startIndex + 1}-{Math.min(endIndex, sortedData.length)} de {sortedData.length}
+            </div>
           </div>
-          <button
-            onClick={handleExportData}
-            disabled={isExporting || filteredData.length === 0}
-            className="flex items-center gap-2 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors text-sm"
-          >
-            {isExporting ? (
-              <>
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                Exportando...
-              </>
-            ) : (
-              <>
-                <Download className="h-4 w-4" />
-                Exportar CSV
-              </>
-            )}
-          </button>
         </div>
       </div>
 
-      {/* Visualização em Cards (Mobile/Tablet) */}
       <div className="lg:hidden space-y-3">
         {currentData.length === 0 ? (
           <div className="text-center py-12 bg-gray-800/50 rounded-lg border border-gray-700/50">
@@ -567,7 +552,7 @@ const TicketTable = ({ data, filterMode = 'none', initialSearchTerm = '' }) => {
             const technician = ticket['Técnico responsável'] || ticket['Atribuído - Técnico'] || 'Não atribuído'
             const category = ticket.Categoria || ticket['Motivo'] || 'Não categorizado'
             const mobileRisk = getRiskForTicket(ticket, 0)
-            
+
             return (
               <div
                 key={index}
@@ -576,7 +561,19 @@ const TicketTable = ({ data, filterMode = 'none', initialSearchTerm = '' }) => {
                 <div className="flex items-start justify-between gap-3 mb-3">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-2">
-                      <span className="text-sm font-bold text-blue-400">#{ticket.ID}</span>
+                      {getGlpiTicketUrl(ticket.ID) ? (
+                        <a
+                          href={getGlpiTicketUrl(ticket.ID)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sm font-bold text-blue-400 hover:text-blue-300 underline underline-offset-2"
+                          title="Abrir chamado no GLPI"
+                        >
+                          #{ticket.ID}
+                        </a>
+                      ) : (
+                        <span className="text-sm font-bold text-blue-400">#{ticket.ID}</span>
+                      )}
                       <div className="flex flex-wrap gap-1.5">
                         <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs font-semibold rounded border ${getStatusColor(ticket.Status)}`}>
                           {ticket.Status}
@@ -601,7 +598,7 @@ const TicketTable = ({ data, filterMode = 'none', initialSearchTerm = '' }) => {
                     )}
                   </div>
                 </div>
-                
+
                 <div className="flex flex-wrap items-center gap-2 mb-3">
                   <span className="inline-flex items-center gap-1 px-2 py-1 bg-purple-900/20 text-purple-300 rounded text-xs font-medium border border-purple-500/20">
                     <Tag className="h-3 w-3" />
@@ -618,8 +615,14 @@ const TicketTable = ({ data, filterMode = 'none', initialSearchTerm = '' }) => {
                     <span>{ticket['Data de abertura']?.split(' ')[0] || 'N/A'}</span>
                   </div>
                   {getSLAStatus(ticket)}
+                  {timeElapsed && (
+                    <span className="text-xs text-gray-500 flex items-center gap-1">
+                      <TrendingUp className="h-2.5 w-2.5" />
+                      {timeElapsed}
+                    </span>
+                  )}
                 </div>
-                
+
                 <div className="flex justify-end pt-2 border-t border-gray-700/50">
                   <button
                     onClick={() => handleViewDetails(ticket)}
@@ -648,9 +651,7 @@ const TicketTable = ({ data, filterMode = 'none', initialSearchTerm = '' }) => {
                   <div className="flex items-center gap-1">
                     <span>#</span>
                     {sortColumn === 'ID' && (
-                      <span className="text-blue-400 text-xs">
-                        {sortDirection === 'asc' ? '↑' : '↓'}
-                      </span>
+                      <span className="text-blue-400 text-xs">{sortDirection === 'asc' ? '↑' : '↓'}</span>
                     )}
                   </div>
                 </th>
@@ -661,9 +662,7 @@ const TicketTable = ({ data, filterMode = 'none', initialSearchTerm = '' }) => {
                   <div className="flex items-center gap-1">
                     <span>Título</span>
                     {sortColumn === 'Título' && (
-                      <span className="text-blue-400 text-xs">
-                        {sortDirection === 'asc' ? '↑' : '↓'}
-                      </span>
+                      <span className="text-blue-400 text-xs">{sortDirection === 'asc' ? '↑' : '↓'}</span>
                     )}
                   </div>
                 </th>
@@ -687,9 +686,7 @@ const TicketTable = ({ data, filterMode = 'none', initialSearchTerm = '' }) => {
                     <Calendar className="h-3 w-3" />
                     <span>Data/SLA</span>
                     {sortColumn === 'Data de abertura' && (
-                      <span className="text-blue-400 text-xs">
-                        {sortDirection === 'asc' ? '↑' : '↓'}
-                      </span>
+                      <span className="text-blue-400 text-xs">{sortDirection === 'asc' ? '↑' : '↓'}</span>
                     )}
                   </div>
                 </th>
@@ -700,15 +697,11 @@ const TicketTable = ({ data, filterMode = 'none', initialSearchTerm = '' }) => {
                   <div className="flex items-center gap-1">
                     <span>Risco IA</span>
                     {sortColumn === 'Risco IA' && (
-                      <span className="text-blue-400 text-xs">
-                        {sortDirection === 'asc' ? '↑' : '↓'}
-                      </span>
+                      <span className="text-blue-400 text-xs">{sortDirection === 'asc' ? '↑' : '↓'}</span>
                     )}
                   </div>
                 </th>
-                <th className="px-3 py-3 text-center text-xs font-semibold text-gray-300 uppercase tracking-wider">
-                  Ações
-                </th>
+                <th className="px-3 py-3 text-center text-xs font-semibold text-gray-300 uppercase tracking-wider">Ações</th>
               </tr>
             </thead>
             <tbody className="bg-gray-900/50 divide-y divide-gray-700/30">
@@ -728,51 +721,48 @@ const TicketTable = ({ data, filterMode = 'none', initialSearchTerm = '' }) => {
                   const technician = ticket['Técnico responsável'] || ticket['Atribuído - Técnico'] || 'Não atribuído'
                   const category = ticket.Categoria || ticket['Motivo'] || 'Não categorizado'
                   const ticketRisk = getRiskForTicket(ticket, 0)
-                  
+
                   return (
-                    <tr 
-                      key={index} 
-                      className="hover:bg-gray-800/50 transition-colors group border-b border-gray-700/30"
-                    >
+                    <tr key={index} className="hover:bg-gray-800/50 transition-colors group border-b border-gray-700/30">
                       <td className="px-3 py-3 whitespace-nowrap text-sm font-bold text-blue-400">
-                        #{ticket.ID}
+                        {getGlpiTicketUrl(ticket.ID) ? (
+                          <a
+                            href={getGlpiTicketUrl(ticket.ID)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="hover:text-blue-300 underline underline-offset-2"
+                            title="Abrir chamado no GLPI"
+                          >
+                            #{ticket.ID}
+                          </a>
+                        ) : (
+                          <>#{ticket.ID}</>
+                        )}
                       </td>
                       <td className="px-3 py-3 text-sm text-gray-200">
                         <div className="flex flex-col gap-1 max-w-xs">
-                          <span className="font-medium text-white truncate" title={ticket.Título}>
-                            {ticket.Título}
-                          </span>
+                          <span className="font-medium text-white truncate" title={ticket.Título}>{ticket.Título}</span>
                           {ticket['Requerente - Requerente'] && (
-                            <span className="text-xs text-gray-500 truncate">
-                              Por: {ticket['Requerente - Requerente']}
-                            </span>
+                            <span className="text-xs text-gray-500 truncate">Por: {ticket['Requerente - Requerente']}</span>
                           )}
                         </div>
                       </td>
                       <td className="px-3 py-3">
                         <div className="flex flex-col gap-1.5">
                           <div className="flex flex-wrap gap-1">
-                            <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 text-xs font-semibold rounded border ${getStatusColor(ticket.Status)}`}>
-                              {ticket.Status}
-                            </span>
-                            <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 text-xs font-semibold rounded border ${getPriorityColor(ticket.Prioridade)}`}>
-                              {ticket.Prioridade}
-                            </span>
+                            <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 text-xs font-semibold rounded border ${getStatusColor(ticket.Status)}`}>{ticket.Status}</span>
+                            <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 text-xs font-semibold rounded border ${getPriorityColor(ticket.Prioridade)}`}>{ticket.Prioridade}</span>
                           </div>
                           <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-purple-900/20 text-purple-300 rounded text-xs font-medium border border-purple-500/20 max-w-fit">
                             <Tag className="h-2.5 w-2.5" />
-                            <span className="truncate max-w-[150px]" title={category}>
-                              {category}
-                            </span>
+                            <span className="truncate max-w-[150px]" title={category}>{category}</span>
                           </span>
                         </div>
                       </td>
                       <td className="px-3 py-3">
                         <div className="flex items-center gap-1.5">
                           <User className="h-3.5 w-3.5 text-gray-500 flex-shrink-0" />
-                          <span className="text-sm text-gray-300 truncate max-w-[140px]" title={technician}>
-                            {technician}
-                          </span>
+                          <span className="text-sm text-gray-300 truncate max-w-[140px]" title={technician}>{technician}</span>
                         </div>
                       </td>
                       <td className="px-3 py-3">
@@ -781,9 +771,7 @@ const TicketTable = ({ data, filterMode = 'none', initialSearchTerm = '' }) => {
                             <Calendar className="h-3 w-3 flex-shrink-0" />
                             <span className="whitespace-nowrap">{ticket['Data de abertura']?.split(' ')[0] || 'N/A'}</span>
                           </div>
-                          <div className="flex items-center gap-1">
-                            {getSLAStatus(ticket)}
-                          </div>
+                          <div className="flex items-center gap-1">{getSLAStatus(ticket)}</div>
                           {timeElapsed && (
                             <span className="text-xs text-gray-500 flex items-center gap-1">
                               <TrendingUp className="h-2.5 w-2.5" />

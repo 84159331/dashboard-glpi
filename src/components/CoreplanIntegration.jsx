@@ -26,6 +26,99 @@ import {
 import Papa from 'papaparse'
 import { useNotifications } from './Notification'
 
+// Helper functions para chamar GLPI diretamente via proxy
+const glpiInitSession = async ({ appToken, userToken, username, password }) => {
+  const headers = {
+    'Content-Type': 'application/json'
+  }
+  
+  if (appToken) headers['App-Token'] = appToken
+  
+  if (userToken) {
+    headers['Authorization'] = `user_token ${userToken}`
+  } else if (username && password) {
+    headers['Authorization'] = `Basic ${btoa(`${username}:${password}`)}`
+  }
+  
+  const response = await fetch('/glpi-proxy/apirest.php/initSession', {
+    method: 'GET',
+    headers
+  })
+  
+  if (!response.ok) {
+    if (response.status === 401) throw new Error('Credenciais inválidas')
+    throw new Error(`Erro de autenticação: ${response.status}`)
+  }
+  
+  const data = await response.json()
+  if (!data.session_token) throw new Error('Token de sessão não recebido')
+  return data.session_token
+}
+
+const glpiKillSession = async (sessionToken, appToken) => {
+  try {
+    const headers = { 'Session-Token': sessionToken }
+    if (appToken) headers['App-Token'] = appToken
+    await fetch('/glpi-proxy/apirest.php/killSession', { method: 'GET', headers })
+  } catch {
+    // ignore
+  }
+}
+
+const glpiSearchTickets = async (sessionToken, appToken, range = '0-500') => {
+  const headers = {
+    'Content-Type': 'application/json',
+    'Session-Token': sessionToken
+  }
+  if (appToken) headers['App-Token'] = appToken
+  
+  const response = await fetch(`/glpi-proxy/apirest.php/search/Ticket?range=${range}`, {
+    method: 'GET',
+    headers
+  })
+  
+  if (!response.ok) {
+    throw new Error(`Erro ao buscar tickets: ${response.status}`)
+  }
+  
+  const data = await response.json()
+  return Array.isArray(data?.data) ? data.data : []
+}
+
+const formatTicket = (raw) => {
+  const statusMap = { 1: 'Novo', 2: 'Em andamento', 3: 'Aguardando Cliente', 4: 'Aguardando Terceiro', 5: 'Resolvido', 6: 'Fechado' }
+  const priorityMap = { 1: 'Baixa', 2: 'Média', 3: 'Alta', 4: 'Crítica', 5: 'Muito Crítica', 6: 'Urgente' }
+  
+  const id = raw.id || raw['2'] || 'N/A'
+  const title = raw.name || raw['1'] || 'Sem título'
+  const status = statusMap[raw.status || raw['12']] || 'Desconhecido'
+  const priority = priorityMap[raw.priority || raw['3']] || 'Não Definida'
+  const createdAt = raw.date_creation || raw['15'] || new Date().toISOString()
+  const requester = raw.users_id_recipient || raw['4'] || 'N/A'
+  const assignedTo = raw.users_id_assign || raw['5'] || 'N/A'
+  const category = raw.itilcategories_id || raw['7'] || 'Geral'
+  
+  return {
+    ID: String(id),
+    Título: String(title),
+    Status: String(status),
+    Prioridade: String(priority),
+    Categoria: String(category),
+    'Requerente - Requerente': String(requester),
+    'Atribuído - Técnico': String(assignedTo),
+    'Técnico responsável': String(assignedTo),
+    'Data de abertura': String(createdAt),
+    id: String(id),
+    title: String(title),
+    status: String(status),
+    priority: String(priority),
+    requester: String(requester),
+    assignedTo: String(assignedTo),
+    createdAt: String(createdAt),
+    category: String(category)
+  }
+}
+
 const CoreplanIntegration = () => {
   const [isConnected, setIsConnected] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -37,6 +130,7 @@ const CoreplanIntegration = () => {
     username: '',
     password: '',
     apiKey: '',
+    userToken: '',
     baseUrl: 'https://suporte.coreplan.com.br'
   })
   const [glpiService, setGlpiService] = useState(null)
@@ -85,6 +179,20 @@ const CoreplanIntegration = () => {
           username: parsed.username || ''
         }))
       }
+
+      try {
+        const tokenSaved = sessionStorage.getItem('coreplan-credentials-tokens')
+        if (tokenSaved) {
+          const parsedTokens = JSON.parse(tokenSaved)
+          setCredentials(prev => ({
+            ...prev,
+            apiKey: parsedTokens.apiKey || '',
+            userToken: parsedTokens.userToken || ''
+          }))
+        }
+      } catch {
+        sessionStorage.removeItem('coreplan-credentials-tokens')
+      }
     } catch (error) {
       console.error('Erro ao carregar credenciais salvas:', error)
       // Limpar credenciais corrompidas
@@ -99,6 +207,20 @@ const CoreplanIntegration = () => {
         baseUrl: credentials.baseUrl,
         username: credentials.username
       }))
+
+      try {
+        const payload = {
+          apiKey: credentials.apiKey,
+          userToken: credentials.userToken
+        }
+        if (payload.apiKey || payload.userToken) {
+          sessionStorage.setItem('coreplan-credentials-tokens', JSON.stringify(payload))
+        } else {
+          sessionStorage.removeItem('coreplan-credentials-tokens')
+        }
+      } catch {
+        // ignore
+      }
       addNotification({
         type: 'success',
         title: 'Credenciais Salvas',
@@ -117,11 +239,14 @@ const CoreplanIntegration = () => {
   }
 
   const testConnection = async () => {
-    if (!credentials.username || !credentials.password || !credentials.baseUrl) {
+    const hasTokenAuth = Boolean(credentials.userToken)
+    const hasBasicAuth = Boolean(credentials.username && credentials.password)
+
+    if (!hasTokenAuth && !hasBasicAuth) {
       addNotification({
         type: 'warning',
         title: 'Credenciais Incompletas',
-        message: 'Preencha todas as credenciais antes de testar a conexão.',
+        message: 'Informe (User-Token) ou (Usuário + Senha) antes de testar a conexão.',
         duration: 4000
       })
       return
@@ -130,45 +255,32 @@ const CoreplanIntegration = () => {
     setIsLoading(true)
     setConnectionStatus('testing')
     
+    let sessionToken = null
     try {
-      const response = await fetch('/api/glpi/test', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          baseUrl: credentials.baseUrl,
-          username: credentials.username,
-          password: credentials.password
-        })
+      sessionToken = await glpiInitSession({
+        appToken: credentials.apiKey,
+        userToken: credentials.userToken,
+        username: credentials.username,
+        password: credentials.password
       })
-
-      const result = await response.json()
       
-      if (result.success) {
-        setIsConnected(true)
-        setConnectionStatus('connected')
-        setGlpiService({
-          baseUrl: credentials.baseUrl,
-          username: credentials.username,
-          password: credentials.password
-        })
-        addNotification({
-          type: 'success',
-          title: 'Conexão Estabelecida',
-          message: 'Conectado com sucesso ao GLPI da Coreplan.',
-          duration: 4000
-        })
-      } else {
-        setIsConnected(false)
-        setConnectionStatus('error')
-        addNotification({
-          type: 'error',
-          title: 'Erro de Conexão',
-          message: result.error || 'Credenciais inválidas ou erro de conexão.',
-          duration: 5000
-        })
-      }
+      const tickets = await glpiSearchTickets(sessionToken, credentials.apiKey, '0-10')
+      
+      setIsConnected(true)
+      setConnectionStatus('connected')
+      setGlpiService({
+        baseUrl: credentials.baseUrl,
+        username: credentials.username,
+        password: credentials.password,
+        appToken: credentials.apiKey,
+        userToken: credentials.userToken
+      })
+      addNotification({
+        type: 'success',
+        title: 'Conexão Estabelecida',
+        message: `Conectado com sucesso ao GLPI. ${tickets.length} tickets no teste.`,
+        duration: 4000
+      })
     } catch (error) {
       console.error('Erro no teste de conexão:', error)
       setIsConnected(false)
@@ -180,6 +292,7 @@ const CoreplanIntegration = () => {
         duration: 5000
       })
     } finally {
+      if (sessionToken) await glpiKillSession(sessionToken, credentials.apiKey)
       setIsLoading(false)
     }
   }
@@ -262,30 +375,63 @@ const CoreplanIntegration = () => {
     setIsLoading(true)
     
     try {
-      const response = await fetch('/api/glpi/tickets', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          baseUrl: glpiService.baseUrl,
-          username: glpiService.username,
-          password: glpiService.password,
-          range: '0-9999'
-        })
-      })
-
-      const result = await response.json()
-      if (!result.success) {
-        throw new Error(result.error || 'Falha ao buscar tickets')
+      let previousIds = new Set()
+      try {
+        const stored = localStorage.getItem('dashboard-data')
+        const parsed = stored ? JSON.parse(stored) : []
+        if (Array.isArray(parsed)) {
+          previousIds = new Set(
+            parsed
+              .map(t => t?.ID ?? t?.id)
+              .filter(v => v !== null && v !== undefined)
+              .map(v => String(v))
+          )
+        }
+      } catch {
+        previousIds = new Set()
       }
 
-      const tickets = result.tickets
+      // Chamar GLPI diretamente via proxy
+      const sessionToken = await glpiInitSession({
+        appToken: glpiService.appToken,
+        userToken: glpiService.userToken,
+        username: glpiService.username,
+        password: glpiService.password
+      })
+      
+      let allTickets = []
+      try {
+        // Buscar tickets em lotes
+        for (let page = 0; page < 20; page++) {
+          const start = page * 500
+          const end = start + 499
+          const rawTickets = await glpiSearchTickets(sessionToken, glpiService.appToken, `${start}-${end}`)
+          if (!rawTickets.length) break
+          allTickets.push(...rawTickets.map(formatTicket))
+          if (rawTickets.length < 500) break
+        }
+      } finally {
+        await glpiKillSession(sessionToken, glpiService.appToken)
+      }
+
+      const tickets = allTickets
       
       if (tickets && Array.isArray(tickets)) {
-        const newTicketsFound = tickets.filter(ticket => 
-          !syncHistory.some(history => history.ticketId === ticket.id)
-        )
+        try {
+          localStorage.setItem('dashboard-data', JSON.stringify(tickets))
+          const columns = tickets.length > 0 ? Object.keys(tickets[0] || {}) : []
+          localStorage.setItem('dashboard-columns', JSON.stringify(columns))
+          localStorage.setItem('dashboard-glpi-baseUrl', String(glpiService.baseUrl || ''))
+          window.dispatchEvent(new Event('dashboard-data-updated'))
+        } catch (e) {
+          console.error('Erro ao salvar dados do dashboard no storage:', e)
+        }
+
+        const newTicketsFound = tickets.filter(ticket => {
+          const id = ticket?.ID ?? ticket?.id
+          if (id === null || id === undefined) return false
+          return !previousIds.has(String(id))
+        })
         
         if (tickets.length > 0) {
           setNewTickets(prev => [...tickets.slice(0, 10), ...prev].slice(0, 10))
@@ -304,16 +450,18 @@ const CoreplanIntegration = () => {
           // Atualizar estatísticas
           setSyncStats(prev => ({
             ...prev,
-            totalTickets: prev.totalTickets + tickets.length,
-            newTickets: prev.newTickets + newTicketsFound.length
+            totalTickets: tickets.length,
+            newTickets: newTicketsFound.length
           }))
           
           // Notificar sobre novos tickets
           newTicketsFound.forEach(ticket => {
+            const displayId = ticket?.ID ?? ticket?.id ?? 'N/A'
+            const displayTitle = ticket?.Título ?? ticket?.title ?? 'Sem título'
             addNotification({
               type: 'info',
               title: 'Novo Ticket Recebido',
-              message: `Ticket #${ticket.id} - ${ticket.title}`,
+              message: `Ticket #${displayId} - ${displayTitle}`,
               duration: 6000
             })
           })
@@ -371,25 +519,27 @@ const CoreplanIntegration = () => {
     }
 
     try {
-      const response = await fetch('/api/glpi/tickets', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          baseUrl: glpiService.baseUrl,
-          username: glpiService.username,
-          password: glpiService.password,
-          range: '0-9999'
-        })
+      // Chamar GLPI diretamente via proxy
+      const sessionToken = await glpiInitSession({
+        appToken: glpiService.appToken,
+        userToken: glpiService.userToken,
+        username: glpiService.username,
+        password: glpiService.password
       })
-
-      const result = await response.json()
-      if (!result.success) {
-        throw new Error(result.error || 'Falha ao buscar tickets')
+      
+      let tickets = []
+      try {
+        for (let page = 0; page < 20; page++) {
+          const start = page * 500
+          const end = start + 499
+          const rawTickets = await glpiSearchTickets(sessionToken, glpiService.appToken, `${start}-${end}`)
+          if (!rawTickets.length) break
+          tickets.push(...rawTickets.map(formatTicket))
+          if (rawTickets.length < 500) break
+        }
+      } finally {
+        await glpiKillSession(sessionToken, glpiService.appToken)
       }
-
-      const tickets = result.tickets
       
       if (!tickets || tickets.length === 0) {
         addNotification({
@@ -642,6 +792,23 @@ const CoreplanIntegration = () => {
                 placeholder="Chave API para autenticação"
               />
             </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                User Token (Opcional)
+              </label>
+              <input
+                type="password"
+                value={credentials.userToken}
+                onChange={(e) => setCredentials(prev => ({ ...prev, userToken: e.target.value }))}
+                className="input-modern w-full"
+                placeholder="Token do usuário (API)"
+              />
+            </div>
+
+            <div />
           </div>
 
           <div className="flex items-center space-x-3">

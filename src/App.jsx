@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import CSVUploader from './components/CSVUploader'
 import Dashboard from './components/Dashboard'
 import Header from './components/Header'
+import CoreplanIntegration from './components/CoreplanIntegration'
 import { useNotifications, NotificationContainer } from './components/Notification'
 import LoadingSpinner from './components/LoadingSpinner'
 import ErrorBoundary from './components/ErrorBoundary'
@@ -10,8 +11,29 @@ function App() {
   const [data, setData] = useState(null)
   const [columns, setColumns] = useState([])
   const [isLoading, setIsLoading] = useState(false)
-  const [currentView, setCurrentView] = useState('upload') // 'upload', 'dashboard'
+  const [currentView, setCurrentView] = useState('upload') // 'upload', 'integration', 'dashboard'
   const { notifications, addNotification, removeNotification } = useNotifications()
+
+  const loadStoredDashboard = () => {
+    try {
+      const storedDataRaw = localStorage.getItem('dashboard-data')
+      const storedColumnsRaw = localStorage.getItem('dashboard-columns')
+
+      if (!storedDataRaw) return false
+
+      const storedData = JSON.parse(storedDataRaw)
+      const storedColumns = storedColumnsRaw ? JSON.parse(storedColumnsRaw) : []
+
+      if (!Array.isArray(storedData) || storedData.length === 0) return false
+
+      setData(storedData)
+      setColumns(Array.isArray(storedColumns) && storedColumns.length ? storedColumns : Object.keys(storedData[0] || {}))
+      setCurrentView('dashboard')
+      return true
+    } catch {
+      return false
+    }
+  }
 
   const handleDataLoaded = (parsedData, columnNames) => {
     setIsLoading(true)
@@ -55,10 +77,29 @@ function App() {
 
   // Garantir que quando não há dados, sempre mostre o uploader
   useEffect(() => {
-    if (!data) {
+    if (!data && currentView !== 'integration') {
       setCurrentView('upload')
     }
-  }, [data])
+  }, [data, currentView])
+
+  useEffect(() => {
+    loadStoredDashboard()
+
+    const onUpdated = () => {
+      const ok = loadStoredDashboard()
+      if (ok) {
+        addNotification({
+          type: 'success',
+          title: 'Dados Atualizados',
+          message: 'Os chamados do GLPI foram sincronizados e o dashboard foi atualizado.',
+          duration: 3500
+        })
+      }
+    }
+
+    window.addEventListener('dashboard-data-updated', onUpdated)
+    return () => window.removeEventListener('dashboard-data-updated', onUpdated)
+  }, [])
 
   // Efeito para aplicar tema salvo
   useEffect(() => {
@@ -84,6 +125,12 @@ function App() {
               text="Processando dados..." 
               variant="primary" 
             />
+          </div>
+        ) : currentView === 'integration' ? (
+          <div className="animate-fade-in">
+            <ErrorBoundary>
+              <CoreplanIntegration />
+            </ErrorBoundary>
           </div>
         ) : !data || data.length === 0 ? (
           <div className="animate-fade-in">

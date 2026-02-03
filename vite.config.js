@@ -5,7 +5,15 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 3000,
-    open: true
+    open: true,
+    proxy: {
+      '/glpi-proxy': {
+        target: 'https://suporte.coreplan.com.br',
+        changeOrigin: true,
+        secure: true,
+        rewrite: (path) => path.replace(/^\/glpi-proxy/, '')
+      }
+    }
   },
   build: {
     outDir: 'dist',
@@ -20,4 +28,4 @@ export default defineConfig({
       }
     }
   }
-}) 
+})
